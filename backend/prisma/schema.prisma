@@ -1,0 +1,24 @@
+// ===== MODEL (schéma des données) =====
+// Fichier source du Model : décrit la structure de la base MySQL.
+// `npx prisma generate` lit ce fichier et génère le client TypeScript
+// dans backend/src/generated/prisma (utilisé par prisma.service.ts).
+// `npx prisma migrate dev` lit ce fichier et met à jour les tables MySQL
+// en conséquence.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  // URL de connexion lue dans backend/.env (DATABASE_URL)
+}
+
+// Table "Message" : une seule ligne contient le texte affiché par la View.
+// Manipulée exclusivement via hello.service.ts (this.prisma.message.*).
+model Message {
+  id      Int    @id @default(autoincrement())
+  content String
+  numero Int @default(0)
+}
