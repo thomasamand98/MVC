@@ -1,0 +1,47 @@
+.page-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.page-actions-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.page-actions-button svg {
+  flex-shrink: 0;
+  font-size: 1.1em;
+}
+
+.page-actions-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.page-actions-button.primary {
+  background: #03c1ec;
+  color: #fff;
+}
+
+.page-actions-button.primary:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+.page-actions-button.danger {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border-color: var(--danger-border);
+}
+
+.page-actions-button.danger:hover:not(:disabled) {
+  background: var(--danger-border);
+}

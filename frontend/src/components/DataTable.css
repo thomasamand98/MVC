@@ -1,0 +1,117 @@
+/* DataTable responsive : aligné sur le même seuil que le menu burger
+   (voir Sidebar.css / AppLayout.css, 768px) pour ne jamais laisser le
+   tableau dans un entre-deux illisible (ni carte, ni table confortable).
+   Au-dessus de 768px, les colonnes se répartissent sur 100% de la largeur
+   disponible (table-layout: fixed) et le texte retourne à la ligne —
+   pas de scroll horizontal, tout reste visible ; en dessous, chaque
+   ligne devient une carte empilée label/valeur. */
+.data-table {
+  overflow-x: auto;
+  font-size: 0.85rem;
+}
+
+.data-table table {
+  border-collapse: collapse;
+  width: 100%;
+  table-layout: fixed;
+}
+
+/* Colonne "Description" (Contrats) : en table-layout: fixed, la largeur
+   des colonnes est calculée à partir de celle des cellules d'en-tête
+   (min-width y est ignoré, il faut width) — ciblée via data-label (posé
+   sur th et td). */
+.data-table th[data-label="Description"] {
+  width: 300px;
+}
+
+.data-table th {
+  text-align: left;
+  border-bottom: 2px solid #ccc;
+  padding: 0.5rem;
+  user-select: none;
+  overflow-wrap: anywhere;
+}
+
+.data-table-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.data-table-sort-label {
+  cursor: pointer;
+}
+
+.data-table-filter-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  color: #999;
+}
+
+.data-table-filter-button.active {
+  color: #1c9aa6;
+}
+
+.data-table-filter-input {
+  margin-top: 0.4rem;
+  width: 100%;
+  font-weight: 400;
+  padding: 0.25rem 0.4rem;
+  box-sizing: border-box;
+}
+
+.data-table-row.clickable {
+  cursor: pointer;
+}
+
+.data-table-row.selected {
+  background: var(--accent-bg);
+}
+
+.data-table td {
+  border-bottom: 1px solid #eee;
+  padding: 0.5rem;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 768px) {
+  .data-table thead {
+    display: none;
+  }
+
+  .data-table tbody tr {
+    display: block;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.6rem 0.8rem;
+    margin-block-end: 0.6rem;
+  }
+
+  .data-table tbody td {
+    display: block;
+    border-bottom: 1px dashed var(--border) !important;
+    padding: 0.35rem 0 !important;
+    text-align: left;
+    overflow-wrap: anywhere;
+  }
+
+  .data-table tbody tr td:last-child {
+    border-bottom: none !important;
+  }
+
+  .data-table tbody td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.78em;
+    font-weight: 600;
+    color: var(--text-h);
+    margin-bottom: 0.15rem;
+  }
+
+  .data-table tbody tr td:first-child {
+    font-weight: 700;
+  }
+}

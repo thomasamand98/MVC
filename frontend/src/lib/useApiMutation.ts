@@ -1,0 +1,29 @@
+// Envoie une requête d'écriture (create/update/delete) à l'API backend et
+// parse la réponse JSON si elle en contient une (DELETE renvoie un corps
+// vide côté NestJS, voir *.controller.ts).
+async function request<T>(path: string, method: string, body?: unknown): Promise<T> {
+  const res = await fetch(`http://${window.location.hostname}:3000/${path}`, {
+    method,
+    headers: body !== undefined ? { 'Content-Type': 'application/json' } : undefined,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  const text = await res.text()
+  return (text ? JSON.parse(text) : undefined) as T
+}
+
+// Crée/modifie/supprime des enregistrements sur l'API backend pour
+// `endpoint` (ex. "societes" → POST/PATCH/DELETE /societes, voir
+// *.controller.ts côté backend). Partagé par toutes les features sous
+// src/features/, à côté de useApiList pour la lecture.
+// `TDto` est la forme du formulaire envoyée ; `T` (par défaut égal à TDto)
+// est la forme de l'enregistrement renvoyé par l'API — create/update
+// renvoient l'enregistrement à jour tel que la liste l'attend, pour que les
+// pages puissent l'insérer directement dans leur état local (voir
+// <Entite>Page.tsx) sans refaire de GET.
+export function useApiMutation<TDto, T = TDto>(endpoint: string) {
+  const create = (dto: TDto) => request<T>(endpoint, 'POST', dto)
+  const update = (id: string, dto: Partial<TDto>) => request<T>(`${endpoint}/${id}`, 'PATCH', dto)
+  const remove = (id: string) => request<void>(`${endpoint}/${id}`, 'DELETE')
+  return { create, update, remove }
+}

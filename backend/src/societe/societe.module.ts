@@ -5,12 +5,12 @@
 // C'est ce module qui est importé par app.module.ts pour brancher la route
 // GET /hello dans l'application.
 import { Module } from '@nestjs/common';
-import { HelloController } from './hello.controller.js';
-import { HelloService } from './hello.service.js';
+import { SocieteController } from './societe.controller.js';
+import { SocietesService } from './societe.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 @Module({
-  controllers: [HelloController],
-  providers: [HelloService, PrismaService],
+  controllers: [SocieteController],
+  providers: [SocietesService, PrismaService],
 })
-export class HelloModule {}
+export class SocieteModule {}
