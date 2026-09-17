@@ -4,6 +4,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { serializeBigInt } from '../prisma/serialize-bigint.js';
 import { CreateContactDto, UpdateContactDto } from './contact.dto.js';
 
 export const contactSelect = {
@@ -27,40 +28,96 @@ export const contactSelect = {
   },
 } satisfies Prisma.ContactSelect;
 
+// Select complet pour GET /contacts/:id — tous les champs scripturables du
+// contact, plus la totalité de ses rattachements société/point (contrairement
+// à contactSelect, utilisé par la liste, qui n'en garde qu'un seul).
+export const contactDetailSelect = {
+  ...contactSelect,
+  Telephone_autre: true,
+  Remarque: true,
+  Personne_physique: true,
+  Adresse_entreprise: true,
+  description_telephone: true,
+  IDADRESSES: true,
+  Adresse: { select: { Adresse1: true, CP: true, Localite: true } },
+  SocieteContacts: {
+    select: {
+      Type_lien: true,
+      Fonction_contact: true,
+      Service_bureau: true,
+      Societe: { select: { Nom_societe: true } },
+    },
+  },
+  PointContacts: {
+    select: {
+      Lien: true,
+      Recevoir_Mail_Planning: true,
+      Point: { select: { Libelle: true } },
+    },
+  },
+} satisfies Prisma.ContactSelect;
+
 @Injectable()
 export class ContactService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getContacts() {
-    const contacts = await this.prisma.contact.findMany({
-      orderBy: { IDCONTACTS: 'asc' },
-      select: contactSelect,
+  // page/pageSize optionnels : omis, le comportement est inchangé (toute la
+  // table). Fournis, la requête est découpée avec skip/take et `total`
+  // (nombre total de lignes, pas juste celles de la page) est renvoyé à
+  // côté pour que le frontend puisse calculer le nombre de pages.
+  async getContacts(page?: number, pageSize?: number) {
+    const paginate = page !== undefined && pageSize !== undefined && pageSize > 0;
+    const [contacts, total] = await Promise.all([
+      this.prisma.contact.findMany({
+        orderBy: { IDCONTACTS: 'asc' },
+        select: contactSelect,
+        ...(paginate ? { skip: (page - 1) * pageSize, take: pageSize } : {}),
+      }),
+      this.prisma.contact.count(),
+    ]);
+    return { contacts: serializeBigInt(contacts), total };
+  }
+
+  async getContact(id: bigint) {
+    const contact = await this.prisma.contact.findUniqueOrThrow({
+      where: { IDCONTACTS: id },
+      select: contactDetailSelect,
     });
-    // IDCONTACTS est un BigInt (JSON.stringify ne sait pas le sérialiser) →
-    // converti en string pour que la réponse HTTP reste valide.
-    return contacts.map((contact) => ({ ...contact, IDCONTACTS: contact.IDCONTACTS.toString() }));
+    return serializeBigInt(contact);
   }
 
   async createContact(dto: CreateContactDto) {
+    const data = toContactData(dto);
     const contact = await this.prisma.contact.create({
-      // IDUTILISATEURS_* ont un défaut DB de 0, qui viole leur contrainte de
-      // clé étrangère (aucune ligne d'id 0) — mis explicitement à NULL.
-      data: { ...dto, IDUTILISATEURS_createur: null, IDUTILISATEURS_modificateur: null },
+      // IDADRESSES/IDUTILISATEURS_* ont un défaut DB de 0, qui viole leur
+      // contrainte de clé étrangère (aucune ligne d'id 0) quand ils sont
+      // omis — mis explicitement à NULL.
+      data: { ...data, IDADRESSES: data.IDADRESSES ?? null, IDUTILISATEURS_createur: null, IDUTILISATEURS_modificateur: null },
       select: contactSelect,
     });
-    return { ...contact, IDCONTACTS: contact.IDCONTACTS.toString() };
+    return serializeBigInt(contact);
   }
 
   async updateContact(id: bigint, dto: UpdateContactDto) {
     const contact = await this.prisma.contact.update({
       where: { IDCONTACTS: id },
-      data: dto,
+      data: toContactData(dto),
       select: contactSelect,
     });
-    return { ...contact, IDCONTACTS: contact.IDCONTACTS.toString() };
+    return serializeBigInt(contact);
   }
 
   async deleteContact(id: bigint) {
     await this.prisma.contact.delete({ where: { IDCONTACTS: id } });
   }
+}
+
+// Le DTO a les mêmes noms de champs que Prisma — seul IDADRESSES (BigInt
+// côté Prisma, string côté JSON) a besoin d'être converti, le reste passe
+// tel quel via le spread.
+function toContactData(dto: CreateContactDto | UpdateContactDto) {
+  return {
+    ...dto,
+    IDADRESSES: dto.IDADRESSES ? BigInt(dto.IDADRESSES) : undefined,
+  };
 }

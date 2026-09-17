@@ -19,6 +19,12 @@ import { ContactsPage } from '../features/contacts/ContactsPage.js'
 import { PointsPage } from '../features/points/PointsPage.js'
 import { ConditionsPage } from '../features/conditions/ConditionsPage.js'
 import { MarchandisesPage } from '../features/marchandises/MarchandisesPage.js'
+import { ChauffeursPage } from '../features/chauffeurs/ChauffeursPage.js'
+import { VehiculesPage } from '../features/vehicules/VehiculesPage.js'
+import { AttelagesPage } from '../features/attelages/AttelagesPage.js'
+import { CommandesPage } from '../features/commandes/CommandesPage.js'
+import { PersonnelPage } from '../features/personnel/PersonnelPage.js'
+import { PointagePage } from '../features/pointage/PointagePage.js'
 
 type MenuLeafConfig = { id: string; label: string; icon?: ReactNode; render: () => ReactElement }
 type MenuGroupConfig = { id: string; label: string; icon?: ReactNode; items: MenuLeafConfig[] }
@@ -49,9 +55,9 @@ const MENU: (MenuLeafConfig | MenuGroupConfig)[] = [
     label: 'Gestion attelage',
     icon: <AttelageIcon />,
     items: [
-      { id: 'chauffeurs', label: 'Chauffeurs', render: () => <Dev /> },
-      { id: 'vehicules', label: 'Véhicules', render: () => <Dev /> },
-      { id: 'attelages', label: 'Attelages', render: () => <Dev /> },
+      { id: 'chauffeurs', label: 'Chauffeurs', render: () => <ChauffeursPage /> },
+      { id: 'vehicules', label: 'Véhicules', render: () => <VehiculesPage /> },
+      { id: 'attelages', label: 'Attelages', render: () => <AttelagesPage /> },
     ]
   },
   {
@@ -59,7 +65,7 @@ const MENU: (MenuLeafConfig | MenuGroupConfig)[] = [
     label: 'Production',
     icon: <ProductionIcon />,
     items: [
-      { id: 'commandes', label: 'Commandes', render: () => <Dev /> },
+      { id: 'commandes', label: 'Commandes', render: () => <CommandesPage /> },
       { id: 'planning', label: 'Planning', render: () => <Dev /> },
       { id: 'executions', label: 'Exécutions', render: () => <Dev /> },
     ]
@@ -69,8 +75,8 @@ const MENU: (MenuLeafConfig | MenuGroupConfig)[] = [
     label: 'Gestion personnel',
     icon: <PersonnelIcon />,
     items: [
-      { id: 'personnel', label: 'Personnel', render: () => <Dev /> },
-      { id: 'pointage', label: 'Pointage', render: () => <Dev /> },
+      { id: 'personnel', label: 'Personnel', render: () => <PersonnelPage /> },
+      { id: 'pointage', label: 'Pointage', render: () => <PointagePage /> },
     ]
   },
   { id: 'documentaire', label: 'Gestion documentaire', icon: <DocumentaireIcon />, render: () => <Dev /> },

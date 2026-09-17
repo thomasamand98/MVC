@@ -1,6 +1,6 @@
 // ===== CONTROLLER =====
 // Reçoit les requêtes HTTP de la View et délègue au Model (SocietesService).
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { SocietesService } from './societe.service.js';
 import type { CreateSocieteDto, UpdateSocieteDto } from './societe.dto.js';
 
@@ -8,10 +8,16 @@ import type { CreateSocieteDto, UpdateSocieteDto } from './societe.dto.js';
 export class SocieteController {
   constructor(private readonly societeService: SocietesService) {}
 
+  // ?page=1&pageSize=25 : optionnels — omis, renvoie toute la table (comme
+  // avant). Voir SocietesService.getSocietes pour le détail.
   @Get('societes')
-  async getSocietes() {
-    const societes = await this.societeService.getSocietes();
-    return { societes };
+  async getSocietes(@Query('page') page?: string, @Query('pageSize') pageSize?: string) {
+    return this.societeService.getSocietes(page ? Number(page) : undefined, pageSize ? Number(pageSize) : undefined);
+  }
+
+  @Get('societes/:id')
+  async getSociete(@Param('id') id: string) {
+    return this.societeService.getSociete(BigInt(id));
   }
 
   @Post('societes')

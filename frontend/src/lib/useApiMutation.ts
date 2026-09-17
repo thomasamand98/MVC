@@ -20,10 +20,14 @@ async function request<T>(path: string, method: string, body?: unknown): Promise
 // est la forme de l'enregistrement renvoyé par l'API — create/update
 // renvoient l'enregistrement à jour tel que la liste l'attend, pour que les
 // pages puissent l'insérer directement dans leur état local (voir
-// <Entite>Page.tsx) sans refaire de GET.
-export function useApiMutation<TDto, T = TDto>(endpoint: string) {
+// <Entite>Page.tsx) sans refaire de GET. `TDetail` (par défaut égal à T) est
+// la forme renvoyée par `get`, pour les features dont la fiche détaillée
+// (GET /<endpoint>/:id) contient plus de champs que la liste — voir
+// ContactsPage.tsx.
+export function useApiMutation<TDto, T = TDto, TDetail = T>(endpoint: string) {
+  const get = (id: string) => request<TDetail>(`${endpoint}/${id}`, 'GET')
   const create = (dto: TDto) => request<T>(endpoint, 'POST', dto)
   const update = (id: string, dto: Partial<TDto>) => request<T>(`${endpoint}/${id}`, 'PATCH', dto)
   const remove = (id: string) => request<void>(`${endpoint}/${id}`, 'DELETE')
-  return { create, update, remove }
+  return { get, create, update, remove }
 }

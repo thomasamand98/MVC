@@ -4,6 +4,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { serializeBigInt } from '../prisma/serialize-bigint.js';
 import { CreateConditionDto, UpdateConditionDto } from './condition.dto.js';
 
 export const conditionSelect = {
@@ -17,17 +18,33 @@ export const conditionSelect = {
 export class ConditionService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getConditions() {
-    const conditions = await this.prisma.conditionExecution.findMany({
-      orderBy: { IDCONDITIONS_EXECUTION: 'asc' },
+  // page/pageSize optionnels : omis, le comportement est inchangé (toute la
+  // table). Fournis, la requête est découpée avec skip/take et `total`
+  // (nombre total de lignes, pas juste celles de la page) est renvoyé à
+  // côté pour que le frontend puisse calculer le nombre de pages.
+  async getConditions(page?: number, pageSize?: number) {
+    const paginate = page !== undefined && pageSize !== undefined && pageSize > 0;
+    const [conditions, total] = await Promise.all([
+      this.prisma.conditionExecution.findMany({
+        orderBy: { IDCONDITIONS_EXECUTION: 'asc' },
+        select: conditionSelect,
+        ...(paginate ? { skip: (page - 1) * pageSize, take: pageSize } : {}),
+      }),
+      this.prisma.conditionExecution.count(),
+    ]);
+    return { conditions: serializeBigInt(conditions), total };
+  }
+
+  // Pas de conditionDetailSelect séparé : conditionSelect contient déjà tous
+  // les champs métier du modèle (les seuls autres champs sont des champs
+  // d'audit — créateur/modificateur/dates — non exposés). GET /:id ajouté
+  // quand même pour garder une API uniforme avec les autres modules.
+  async getCondition(id: bigint) {
+    const condition = await this.prisma.conditionExecution.findUniqueOrThrow({
+      where: { IDCONDITIONS_EXECUTION: id },
       select: conditionSelect,
     });
-    // IDCONDITIONS_EXECUTION est un BigInt (JSON.stringify ne sait pas le
-    // sérialiser) → converti en string pour que la réponse HTTP reste valide.
-    return conditions.map((condition) => ({
-      ...condition,
-      IDCONDITIONS_EXECUTION: condition.IDCONDITIONS_EXECUTION.toString(),
-    }));
+    return serializeBigInt(condition);
   }
 
   async createCondition(dto: CreateConditionDto) {
@@ -35,7 +52,7 @@ export class ConditionService {
       data: dto,
       select: conditionSelect,
     });
-    return { ...condition, IDCONDITIONS_EXECUTION: condition.IDCONDITIONS_EXECUTION.toString() };
+    return serializeBigInt(condition);
   }
 
   async updateCondition(id: bigint, dto: UpdateConditionDto) {
@@ -44,7 +61,7 @@ export class ConditionService {
       data: dto,
       select: conditionSelect,
     });
-    return { ...condition, IDCONDITIONS_EXECUTION: condition.IDCONDITIONS_EXECUTION.toString() };
+    return serializeBigInt(condition);
   }
 
   async deleteCondition(id: bigint) {

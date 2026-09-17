@@ -1,6 +1,6 @@
 // ===== CONTROLLER =====
 // Reçoit les requêtes HTTP de la View et délègue au Model (ContactService).
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ContactService } from './contact.service.js';
 import type { CreateContactDto, UpdateContactDto } from './contact.dto.js';
 
@@ -8,10 +8,16 @@ import type { CreateContactDto, UpdateContactDto } from './contact.dto.js';
 export class ContactController {
   constructor(private readonly contactService: ContactService) {}
 
+  // ?page=1&pageSize=25 : optionnels — omis, renvoie toute la table (comme
+  // avant). Voir ContactService.getContacts pour le détail.
   @Get('contacts')
-  async getContacts() {
-    const contacts = await this.contactService.getContacts();
-    return { contacts };
+  async getContacts(@Query('page') page?: string, @Query('pageSize') pageSize?: string) {
+    return this.contactService.getContacts(page ? Number(page) : undefined, pageSize ? Number(pageSize) : undefined);
+  }
+
+  @Get('contacts/:id')
+  async getContact(@Param('id') id: string) {
+    return this.contactService.getContact(BigInt(id));
   }
 
   @Post('contacts')

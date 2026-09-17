@@ -1,4 +1,4 @@
-import { useApiList } from '../../lib/useApiList.js'
+import { useApiList, type ApiListPagination } from '../../lib/useApiList.js'
 
 // Forme d'une marchandise telle que renvoyée par le Controller backend
 // (backend/src/marchandise/marchandise.controller.ts → GET /marchandises),
@@ -22,9 +22,20 @@ export type Marchandise = {
   } | null
 }
 
+// Forme complète d'une marchandise telle que renvoyée par
+// GET /marchandises/:id (backend/src/marchandise/marchandise.controller.ts),
+// qui reflète directement le `marchandiseDetailSelect` de
+// marchandise.service.ts — mêmes champs que `Marchandise` (le déchet lié est
+// déjà présent dans le select léger), plus Is_dechet/Archive.
+export type MarchandiseDetail = Marchandise & {
+  Is_dechet: number | null
+  Archive: number | null
+}
+
 // Récupère la liste des marchandises depuis l'API au montage du composant
 // qui l'utilise (voir lib/useApiList.ts pour la logique fetch partagée).
-export function useMarchandises() {
-  const { data: marchandises, setData: setMarchandises, loading, error, refetch } = useApiList<Marchandise>('marchandises')
-  return { marchandises, setMarchandises, loading, error, refetch }
+// `pagination` optionnel : voir ApiListPagination (useApiList.ts).
+export function useMarchandises(pagination?: ApiListPagination) {
+  const { data: marchandises, setData: setMarchandises, loading, error, refetch, total } = useApiList<Marchandise>('marchandises', pagination)
+  return { marchandises, setMarchandises, loading, error, refetch, total }
 }

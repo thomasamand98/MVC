@@ -23,6 +23,8 @@ model Adresse {
   Code_insee                  String?   @db.VarChar(50)
   Pays_full_name              String?   @db.VarChar(50)
   Points                      Point[]
+  Contacts                    Contact[]
+  Societes                    Societe[]
 
   @@index([CP], map: "WDIDX_ADRESSES_CP")
   @@index([Code_insee], map: "WDIDX_ADRESSES_Code_insee")
@@ -44,6 +46,8 @@ model Attelage {
   IDCHAUFFEUR                 BigInt?      @default(0)
   Personnel                   Personnel?   @relation(fields: [IDPERSONNELS], references: [IDPERSONNELS])
   Chauffeur                   Chauffeur?   @relation(fields: [IDCHAUFFEUR], references: [IDCHAUFFEURS])
+  Tracteur                    Vehicule?    @relation("AttelageTracteur", fields: [IDTRACTEUR], references: [IDVEHICULES])
+  Remorque                    Vehicule?    @relation("AttelageRemorque", fields: [IDREMORQUE], references: [IDVEHICULES])
   Createur                    Utilisateur? @relation("AttelageCreateur", fields: [IDUTILISATEURS_createur], references: [IDUTILISATEURS])
   Modificateur                Utilisateur? @relation("AttelageModificateur", fields: [IDUTILISATEURS_modificateur], references: [IDUTILISATEURS])
 
@@ -245,6 +249,7 @@ model Contact {
   PointDefautss               Point[]
   SocieteContacts             SocieteContact[]
   Utilisateurs                Utilisateur[]
+  Adresse                     Adresse?           @relation(fields: [IDADRESSES], references: [IDADRESSES])
   Createur                    Utilisateur?       @relation("ContactCreateur", fields: [IDUTILISATEURS_createur], references: [IDUTILISATEURS])
   Modificateur                Utilisateur?       @relation("ContactModificateur", fields: [IDUTILISATEURS_modificateur], references: [IDUTILISATEURS])
 
@@ -1273,6 +1278,7 @@ model Societe {
   SocieteContacts             SocieteContact[]
   SousTraitantPrestations     SousTraitantPrestation[]
   Vehicules                   Vehicule[]
+  Adresse                     Adresse?                 @relation(fields: [IDADRESSES], references: [IDADRESSES])
   Createur                    Utilisateur?             @relation("SocieteCreateur", fields: [IDUTILISATEURS_createur], references: [IDUTILISATEURS])
   Modificateur                Utilisateur?             @relation("SocieteModificateur", fields: [IDUTILISATEURS_modificateur], references: [IDUTILISATEURS])
 
@@ -1539,6 +1545,8 @@ model Vehicule {
   Date_validite_tachygeaphe         DateTime?    @db.Date
   Avec_compresseur                  Int          @default(0) @db.TinyInt
   Societe                           Societe?     @relation(fields: [IDSOCIETES], references: [IDSOCIETES])
+  AttelagesTracteur                 Attelage[]   @relation("AttelageTracteur")
+  AttelagesRemorque                 Attelage[]   @relation("AttelageRemorque")
   Createur                          Utilisateur? @relation("VehiculeCreateur", fields: [IDUTILISATEURS_createur], references: [IDUTILISATEURS])
   Modificateur                      Utilisateur? @relation("VehiculeModificateur", fields: [IDUTILISATEURS_modificateur], references: [IDUTILISATEURS])
 

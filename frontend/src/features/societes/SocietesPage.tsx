@@ -1,77 +1,46 @@
 import { useState } from 'react'
-import { useSocietes, type Societe } from './useSocietes.js'
+import { useSocietes, type Societe, type SocieteDetail } from './useSocietes.js'
 import { columns } from './colums.js'
-import { DataTable } from '../../components/DataTable.js'
-import { Modal } from '../../components/Modal.js'
-import { PageActions } from '../../components/PageActions.js'
+import { CrudPage } from '../../components/CrudPage.js'
 import { SocieteForm, type SocieteDto } from './SocieteForm.js'
 import { useApiMutation } from '../../lib/useApiMutation.js'
 
-// Assemble le hook (données), le tableau et la modale de création/
-// modification/suppression — gère les 3 états possibles : chargement,
-// erreur, données prêtes.
+const DEFAULT_PAGE_SIZE = 25
+
 export function SocietesPage() {
-  const { societes, setSocietes, loading, error } = useSocietes()
-  const { create, update, remove } = useApiMutation<SocieteDto, Societe>('societes')
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [modalMode, setModalMode] = useState<'create' | 'edit' | null>(null)
-
-  if (loading) return <p>Chargement des sociétés...</p>
-  if (error) return <p>Erreur : {error}</p>
-
-  const selected = societes.find((s) => s.IDSOCIETES === selectedId) ?? null
-
-  function handleRowClick(societe: Societe) {
-    setSelectedId(societe.IDSOCIETES)
-  }
-
-  function handleRowDoubleClick(societe: Societe) {
-    setSelectedId(societe.IDSOCIETES)
-    setModalMode('edit')
-  }
-
-  async function handleDelete() {
-    if (!selectedId) return
-    if (!confirm('Supprimer cette société ?')) return
-    await remove(selectedId)
-    setSocietes((prev) => prev.filter((s) => s.IDSOCIETES !== selectedId))
-    setSelectedId(null)
-  }
-
-  async function handleSubmit(dto: SocieteDto) {
-    if (modalMode === 'edit' && selectedId) {
-      const updated = await update(selectedId, dto)
-      setSocietes((prev) => prev.map((s) => (s.IDSOCIETES === selectedId ? updated : s)))
-    } else {
-      const created = await create(dto)
-      setSocietes((prev) => [...prev, created])
-    }
-    setModalMode(null)
-  }
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
+  const { societes, setSocietes, loading, error, refetch, total } = useSocietes({ page, pageSize })
+  const { get, create, update, remove } = useApiMutation<SocieteDto, Societe, SocieteDetail>('societes')
 
   return (
-    <div>
-      <div className="page-header">
-        <h2>Sociétés ({societes.length})</h2>
-        <PageActions
-          onCreate={() => { setSelectedId(null); setModalMode('create') }}
-          onDelete={handleDelete}
-          deleteDisabled={!selectedId}
-        />
-      </div>
-      <DataTable
-        data={societes}
-        columns={columns}
-        getRowId={(s) => s.IDSOCIETES}
-        selectedRowId={selectedId}
-        onRowClick={handleRowClick}
-        onRowDoubleClick={handleRowDoubleClick}
-      />
-      {modalMode && (
-        <Modal title={modalMode === 'edit' ? 'Modifier la société' : 'Nouvelle société'} onClose={() => setModalMode(null)}>
-          <SocieteForm initial={modalMode === 'edit' ? selected : null} onSubmit={handleSubmit} onCancel={() => setModalMode(null)} />
-        </Modal>
+    <CrudPage<Societe, SocieteDto, SocieteDetail>
+      title="Sociétés"
+      loadingLabel="Chargement des sociétés..."
+      data={societes}
+      setData={setSocietes}
+      loading={loading}
+      error={error}
+      columns={columns}
+      getRowId={(s) => s.IDSOCIETES}
+      create={create}
+      update={update}
+      remove={remove}
+      getDetail={get}
+      refetch={refetch}
+      pagination={{
+        page,
+        pageSize,
+        total,
+        onPageChange: setPage,
+        onPageSizeChange: (size) => { setPageSize(size); setPage(1) },
+      }}
+      deleteConfirmMessage="Supprimer cette société ?"
+      createModalTitle="Nouvelle société"
+      editModalTitle="Modifier la société"
+      renderForm={({ initial, onSubmit, onCancel }) => (
+        <SocieteForm initial={initial} onSubmit={onSubmit} onCancel={onCancel} />
       )}
-    </div>
+    />
   )
 }

@@ -4,6 +4,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { serializeBigInt } from '../prisma/serialize-bigint.js';
 import { CreateContratDto, UpdateContratDto } from './contrat.dto.js';
 
 // Partagé avec ContratEntity pour que le type reflète toujours exactement
@@ -18,23 +19,56 @@ export const contratSelect = {
   Societe: { select: { Nom_societe: true, TVA: true } },
 } satisfies Prisma.ContratSelect;
 
+// Select complet pour GET /contrats/:id — tous les champs scripturables du
+// contrat, plus le type de facture et la marchandise résolus (au lieu des
+// seuls IDTYPES_FACTURE/IDMARCHANDISES).
+export const contratDetailSelect = {
+  ...contratSelect,
+  IDTYPES_FACTURE: true,
+  Annee_archivage: true,
+  Offre_de_prix: true,
+  Note_confidentielle: true,
+  Instruction_CMR: true,
+  Version_contrat: true,
+  Archive: true,
+  Reference_client: true,
+  Taux_tva: true,
+  Qt_client_facturation: true,
+  Suivant: true,
+  IDMARCHANDISES: true,
+  Commissionnaire: true,
+  Type_contrat: true,
+  Marchandise: { select: { Nom_marchandise: true } },
+  TypeFacture: { select: { Nom: true } },
+} satisfies Prisma.ContratSelect;
+
 @Injectable()
 export class ContratService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getContrats() {
-    const contrats = await this.prisma.contrat.findMany({
-      orderBy: { IDCONTRATS: 'asc' },
-      select: contratSelect,
+  // page/pageSize optionnels : omis, le comportement est inchangé (toute la
+  // table). Fournis, la requête est découpée avec skip/take et `total`
+  // (nombre total de lignes, pas juste celles de la page) est renvoyé à
+  // côté pour que le frontend puisse calculer le nombre de pages.
+  async getContrats(page?: number, pageSize?: number) {
+    const paginate = page !== undefined && pageSize !== undefined && pageSize > 0;
+    const [contrats, total] = await Promise.all([
+      this.prisma.contrat.findMany({
+        orderBy: { IDCONTRATS: 'asc' },
+        select: contratSelect,
+        ...(paginate ? { skip: (page - 1) * pageSize, take: pageSize } : {}),
+      }),
+      this.prisma.contrat.count(),
+    ]);
+    return { contrats: serializeBigInt(contrats), total };
+  }
+
+  async getContrat(id: bigint) {
+    const contrat = await this.prisma.contrat.findUniqueOrThrow({
+      where: { IDCONTRATS: id },
+      select: contratDetailSelect,
     });
-    // IDCONTRATS/IDSOCIETES sont des BigInt (JSON.stringify ne sait pas les
-    // sérialiser) → convertis en string pour que la réponse HTTP reste
-    // valide.
-    return contrats.map((contrat) => ({
-      ...contrat,
-      IDCONTRATS: contrat.IDCONTRATS.toString(),
-      IDSOCIETES: contrat.IDSOCIETES?.toString() ?? null,
-    }));
+    return serializeBigInt(contrat);
   }
 
   async createContrat(dto: CreateContratDto) {
@@ -46,14 +80,14 @@ export class ContratService {
       data: {
         ...data,
         IDSOCIETES: data.IDSOCIETES ?? null,
-        IDTYPES_FACTURE: null,
-        IDMARCHANDISES: null,
+        IDTYPES_FACTURE: data.IDTYPES_FACTURE ?? null,
+        IDMARCHANDISES: data.IDMARCHANDISES ?? null,
         IDUTILISATEURS_createur: null,
         IDUTILISATEURS_modificateur: null,
       },
       select: contratSelect,
     });
-    return { ...contrat, IDCONTRATS: contrat.IDCONTRATS.toString(), IDSOCIETES: contrat.IDSOCIETES?.toString() ?? null };
+    return serializeBigInt(contrat);
   }
 
   async updateContrat(id: bigint, dto: UpdateContratDto) {
@@ -62,7 +96,7 @@ export class ContratService {
       data: toContratData(dto),
       select: contratSelect,
     });
-    return { ...contrat, IDCONTRATS: contrat.IDCONTRATS.toString(), IDSOCIETES: contrat.IDSOCIETES?.toString() ?? null };
+    return serializeBigInt(contrat);
   }
 
   async deleteContrat(id: bigint) {
@@ -70,14 +104,17 @@ export class ContratService {
   }
 }
 
-// Convertit le DTO (champs JSON : IDSOCIETES en string, dates en ISO string)
-// vers le format attendu par Prisma (BigInt, Date).
+// Le DTO a les mêmes noms de champs que Prisma — seuls les champs dont le
+// format JSON diffère (BigInt/Date) ont besoin d'être convertis, le reste
+// passe tel quel via le spread. Taux_tva (Decimal côté Prisma) accepte
+// directement une string, donc rien à convertir pour lui.
 function toContratData(dto: CreateContratDto | UpdateContratDto) {
   return {
-    Num_contrat: dto.Num_contrat,
-    Description_projet: dto.Description_projet,
+    ...dto,
     Date_debut: dto.Date_debut ? new Date(dto.Date_debut) : undefined,
     Date_fin: dto.Date_fin ? new Date(dto.Date_fin) : undefined,
     IDSOCIETES: dto.IDSOCIETES ? BigInt(dto.IDSOCIETES) : undefined,
+    IDTYPES_FACTURE: dto.IDTYPES_FACTURE ? BigInt(dto.IDTYPES_FACTURE) : undefined,
+    IDMARCHANDISES: dto.IDMARCHANDISES ? BigInt(dto.IDMARCHANDISES) : undefined,
   };
 }

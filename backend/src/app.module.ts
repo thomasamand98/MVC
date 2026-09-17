@@ -10,8 +10,27 @@ import { ContactModule } from './contact/contact.module.js';
 import { PointModule } from './point/point.module.js';
 import { ConditionModule } from './condition/condition.module.js';
 import { MarchandiseModule } from './marchandise/marchandise.module.js';
+import { ChauffeurModule } from './chauffeur/chauffeur.module.js';
+import { VehiculeModule } from './vehicule/vehicule.module.js';
+import { AttelageModule } from './attelage/attelage.module.js';
+import { CommandeModule } from './commande/commande.module.js';
+import { PersonnelModule } from './personnel/personnel.module.js';
+import { PointageModule } from './pointage/pointage.module.js';
 
 @Module({
-  imports: [SocieteModule, ContratModule, ContactModule, PointModule, ConditionModule, MarchandiseModule],
+  imports: [
+    SocieteModule,
+    ContratModule,
+    ContactModule,
+    PointModule,
+    ConditionModule,
+    MarchandiseModule,
+    ChauffeurModule,
+    VehiculeModule,
+    AttelageModule,
+    CommandeModule,
+    PersonnelModule,
+    PointageModule,
+  ],
 })
 export class AppModule {}

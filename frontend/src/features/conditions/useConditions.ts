@@ -1,4 +1,4 @@
-import { useApiList } from '../../lib/useApiList.js'
+import { useApiList, type ApiListPagination } from '../../lib/useApiList.js'
 
 // Forme d'une condition telle que renvoyée par le Controller backend
 // (backend/src/condition/condition.controller.ts → GET /conditions), qui
@@ -15,7 +15,8 @@ export type Condition = {
 
 // Récupère la liste des conditions depuis l'API au montage du composant
 // qui l'utilise (voir lib/useApiList.ts pour la logique fetch partagée).
-export function useConditions() {
-  const { data: conditions, setData: setConditions, loading, error, refetch } = useApiList<Condition>('conditions')
-  return { conditions, setConditions, loading, error, refetch }
+// `pagination` optionnel : voir ApiListPagination (useApiList.ts).
+export function useConditions(pagination?: ApiListPagination) {
+  const { data: conditions, setData: setConditions, loading, error, refetch, total } = useApiList<Condition>('conditions', pagination)
+  return { conditions, setConditions, loading, error, refetch, total }
 }

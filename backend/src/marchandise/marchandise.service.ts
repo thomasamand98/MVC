@@ -4,6 +4,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { serializeBigInt } from '../prisma/serialize-bigint.js';
 import { CreateMarchandiseDto, UpdateMarchandiseDto } from './marchandise.dto.js';
 
 export const marchandiseSelect = {
@@ -23,19 +24,42 @@ export const marchandiseSelect = {
   },
 } satisfies Prisma.MarchandiseSelect;
 
+// Select complet pour GET /marchandises/:id — ajoute les deux champs
+// scripturables absents de marchandiseSelect (celui-ci contient déjà le
+// déchet lié en entier, utilisé aussi bien par la liste que le détail).
+export const marchandiseDetailSelect = {
+  ...marchandiseSelect,
+  Is_dechet: true,
+  Archive: true,
+} satisfies Prisma.MarchandiseSelect;
+
 @Injectable()
 export class MarchandiseService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getMarchandises() {
-    const marchandises = await this.prisma.marchandise.findMany({
-      orderBy: { IDMARCHANDISES: 'asc' },
-      select: marchandiseSelect,
+  // page/pageSize optionnels : omis, le comportement est inchangé (toute la
+  // table). Fournis, la requête est découpée avec skip/take et `total`
+  // (nombre total de lignes, pas juste celles de la page) est renvoyé à
+  // côté pour que le frontend puisse calculer le nombre de pages.
+  async getMarchandises(page?: number, pageSize?: number) {
+    const paginate = page !== undefined && pageSize !== undefined && pageSize > 0;
+    const [marchandises, total] = await Promise.all([
+      this.prisma.marchandise.findMany({
+        orderBy: { IDMARCHANDISES: 'asc' },
+        select: marchandiseSelect,
+        ...(paginate ? { skip: (page - 1) * pageSize, take: pageSize } : {}),
+      }),
+      this.prisma.marchandise.count(),
+    ]);
+    return { marchandises: serializeBigInt(marchandises), total };
+  }
+
+  async getMarchandise(id: bigint) {
+    const marchandise = await this.prisma.marchandise.findUniqueOrThrow({
+      where: { IDMARCHANDISES: id },
+      select: marchandiseDetailSelect,
     });
-    // IDMARCHANDISES, CouleurPlanning et IDDECHETS sont des BigInt
-    // (JSON.stringify ne sait pas les sérialiser) → convertis en string pour
-    // que la réponse HTTP reste valide.
-    return marchandises.map(mapMarchandise);
+    return serializeBigInt(marchandise);
   }
 
   async createMarchandise(dto: CreateMarchandiseDto) {
@@ -47,7 +71,7 @@ export class MarchandiseService {
       data: { ...data, IDDECHETS: data.IDDECHETS ?? null },
       select: marchandiseSelect,
     });
-    return mapMarchandise(marchandise);
+    return serializeBigInt(marchandise);
   }
 
   async updateMarchandise(id: bigint, dto: UpdateMarchandiseDto) {
@@ -56,7 +80,7 @@ export class MarchandiseService {
       data: toMarchandiseData(dto),
       select: marchandiseSelect,
     });
-    return mapMarchandise(marchandise);
+    return serializeBigInt(marchandise);
   }
 
   async deleteMarchandise(id: bigint) {
@@ -64,23 +88,12 @@ export class MarchandiseService {
   }
 }
 
-// Convertit un enregistrement Marchandise renvoyé par Prisma (create/update)
-// vers le format JSON (BigInt → string) — même conversion que
-// getMarchandises() mais pour un seul enregistrement.
-function mapMarchandise(marchandise: Prisma.MarchandiseGetPayload<{ select: typeof marchandiseSelect }>) {
-  return {
-    ...marchandise,
-    IDMARCHANDISES: marchandise.IDMARCHANDISES.toString(),
-    CouleurPlanning: marchandise.CouleurPlanning?.toString() ?? null,
-    IDDECHETS: marchandise.IDDECHETS?.toString() ?? null,
-  };
-}
-
-// Convertit le DTO (CouleurPlanning/IDDECHETS en string) vers le format
-// attendu par Prisma (BigInt).
+// Le DTO a les mêmes noms de champs que Prisma — seuls les IDs (BigInt côté
+// Prisma, string côté JSON) ont besoin d'être convertis, le reste passe tel
+// quel via le spread.
 function toMarchandiseData(dto: CreateMarchandiseDto | UpdateMarchandiseDto) {
   return {
-    Nom_marchandise: dto.Nom_marchandise,
+    ...dto,
     CouleurPlanning: dto.CouleurPlanning ? BigInt(dto.CouleurPlanning) : undefined,
     IDDECHETS: dto.IDDECHETS ? BigInt(dto.IDDECHETS) : undefined,
   };
