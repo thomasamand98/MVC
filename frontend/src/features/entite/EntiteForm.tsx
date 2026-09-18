@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { API_URL } from '../../lib/config.js'
 import type { EntiteDto } from './useEntite.js'
 import './EntiteForm.css'
 
@@ -22,7 +23,7 @@ type Props = {
   onSubmit: (e: FormEvent) => void
 }
 
-const apiUrl = (path: string) => `http://${window.location.hostname}:3000/${path}`
+const apiUrl = (path: string) => `${API_URL}/${path}`
 
 // Formulaire "Coordonnée entreprise" — pas de bouton de soumission ici, il
 // vit dans l'en-tête de EntitePage.tsx (attribut `form`, voir formId) pour

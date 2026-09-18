@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { API_URL } from '../../lib/config.js'
 
 type ContratRow = {
   IDCONTRATS: string
@@ -12,7 +13,7 @@ type Props = {
   societeId: string
 }
 
-const apiUrl = (path: string) => `http://${window.location.hostname}:3000/${path}`
+const apiUrl = (path: string) => `${API_URL}/${path}`
 
 function toDateLabel(value: string | null): string {
   return value ? value.slice(0, 10) : '—'

@@ -1,8 +1,10 @@
+import { API_URL } from './config'
+
 // Envoie une requête d'écriture (create/update/delete) à l'API backend et
 // parse la réponse JSON si elle en contient une (DELETE renvoie un corps
 // vide côté NestJS, voir *.controller.ts).
 async function request<T>(path: string, method: string, body?: unknown): Promise<T> {
-  const res = await fetch(`http://${window.location.hostname}:3000/${path}`, {
+  const res = await fetch(`${API_URL}/${path}`, {
     method,
     headers: body !== undefined ? { 'Content-Type': 'application/json' } : undefined,
     body: body !== undefined ? JSON.stringify(body) : undefined,

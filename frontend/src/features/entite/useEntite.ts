@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { API_URL } from '../../lib/config.js'
 
 // Forme de l'entité telle que renvoyée par GET /entite (voir
 // backend/src/entite/entite.service.ts, entiteSelect) — ressource
@@ -70,7 +71,7 @@ export type EntiteDto = {
   Pays_full_name: string
 }
 
-const entiteUrl = () => `http://${window.location.hostname}:3000/entite`
+const entiteUrl = () => `${API_URL}/entite`
 
 // Récupère et modifie l'entité (coordonnées de la société courante,
 // paramètres bancaires et SMTP) — ressource singleton (GET/PATCH /entite,

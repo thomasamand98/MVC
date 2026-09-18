@@ -1573,3 +1573,4 @@ model Ville {
   @@index([IDPAYS], map: "WDIDX_VILLES_IDPAYS")
   @@map("villes")
 }
+
