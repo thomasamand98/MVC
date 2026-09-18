@@ -4,6 +4,7 @@ import { columns } from './colums.js'
 import { CrudPage } from '../../components/CrudPage.js'
 import { SocieteForm, type SocieteDto } from './SocieteForm.js'
 import { useApiMutation } from '../../lib/useApiMutation.js'
+import { useContacts } from '../contacts/useContacts.js'
 
 const DEFAULT_PAGE_SIZE = 25
 
@@ -12,6 +13,12 @@ export function SocietesPage() {
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
   const { societes, setSocietes, loading, error, refetch, total } = useSocietes({ page, pageSize })
   const { get, create, update, remove } = useApiMutation<SocieteDto, Societe, SocieteDetail>('societes')
+  // Chargée ici (une fois, tant que l'onglet Sociétés reste monté) et
+  // passée au formulaire pour les sélecteurs « Contact pour la
+  // comptabilité »/« Contact planning » des sous-onglets Client/Fournisseur
+  // — évite de la recharger à chaque ouverture de la modale (voir
+  // SocieteForm.tsx).
+  const { contacts } = useContacts()
 
   return (
     <CrudPage<Societe, SocieteDto, SocieteDetail>
@@ -39,7 +46,7 @@ export function SocietesPage() {
       createModalTitle="Nouvelle société"
       editModalTitle="Modifier la société"
       renderForm={({ initial, onSubmit, onCancel }) => (
-        <SocieteForm initial={initial} onSubmit={onSubmit} onCancel={onCancel} />
+        <SocieteForm initial={initial} contacts={contacts} onSubmit={onSubmit} onCancel={onCancel} />
       )}
     />
   )

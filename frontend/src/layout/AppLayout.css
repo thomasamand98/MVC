@@ -4,6 +4,11 @@
   gap: 1.5rem;
 }
 
+.app-content {
+  flex: 1;
+  min-width: 0;
+}
+
 .app-layout-menu-toggle {
   display: none;
   position: relative;

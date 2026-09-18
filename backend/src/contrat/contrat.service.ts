@@ -50,15 +50,20 @@ export class ContratService {
   // table). Fournis, la requête est découpée avec skip/take et `total`
   // (nombre total de lignes, pas juste celles de la page) est renvoyé à
   // côté pour que le frontend puisse calculer le nombre de pages.
-  async getContrats(page?: number, pageSize?: number) {
+  // societeId optionnel : ne renvoie que les contrats de cette société —
+  // alimente l'onglet « Contrats / Offres » de la fiche Société
+  // (SocieteForm.tsx).
+  async getContrats(page?: number, pageSize?: number, societeId?: string) {
     const paginate = page !== undefined && pageSize !== undefined && pageSize > 0;
+    const where = societeId ? { IDSOCIETES: BigInt(societeId) } : undefined;
     const [contrats, total] = await Promise.all([
       this.prisma.contrat.findMany({
+        where,
         orderBy: { IDCONTRATS: 'asc' },
         select: contratSelect,
         ...(paginate ? { skip: (page - 1) * pageSize, take: pageSize } : {}),
       }),
-      this.prisma.contrat.count(),
+      this.prisma.contrat.count({ where }),
     ]);
     return { contrats: serializeBigInt(contrats), total };
   }

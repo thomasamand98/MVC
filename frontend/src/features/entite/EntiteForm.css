@@ -1,0 +1,65 @@
+.entite-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem 1.5rem;
+  align-items: start;
+}
+
+.entite-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text-h, var(--text));
+}
+
+.entite-field input,
+.entite-field select {
+  font-weight: 400;
+  font-family: inherit;
+  font-size: 0.9rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.entite-field-group {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.entite-field-group .entite-field {
+  flex: 1;
+}
+
+.entite-field-narrow {
+  max-width: 7rem;
+}
+
+.entite-section-title {
+  margin: 1.75rem 0 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  font-size: 1rem;
+}
+
+.entite-form-grid-email {
+  align-items: end;
+}
+
+.entite-column-title {
+  font-weight: 700;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .entite-form-grid,
+  .entite-field-group {
+    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
+  }
+}

@@ -71,6 +71,45 @@
   background: var(--accent-bg);
 }
 
+/* Ligne "dépliée" insérée sous la ligne concernée — voir RowExpandMode.tsx
+   (mode "Ligne + bloc"), sous components/view-modes/. */
+.data-table-expanded-row td {
+  padding: 0;
+  border-bottom: 2px solid var(--accent-border);
+  background: var(--accent-bg);
+}
+
+.data-table-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.5rem;
+}
+
+.data-table-export-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: #217346;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.data-table-export-button svg {
+  flex-shrink: 0;
+  font-size: 1.1em;
+}
+
+.data-table-export-button:hover {
+  background: var(--accent-bg);
+}
+
 .data-table td {
   border-bottom: 1px solid #eee;
   padding: 0.5rem;

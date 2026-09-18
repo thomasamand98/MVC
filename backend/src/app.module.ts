@@ -5,6 +5,9 @@
 // et on l'ajouterait dans le tableau `imports` ci-dessous.
 import { Module } from '@nestjs/common';
 import { SocieteModule } from './societe/societe.module.js';
+import { ClientModule } from './client/client.module.js';
+import { FournisseurModule } from './fournisseur/fournisseur.module.js';
+import { MessageModule } from './message/message.module.js';
 import { ContratModule } from './contrat/contrat.module.js';
 import { ContactModule } from './contact/contact.module.js';
 import { PointModule } from './point/point.module.js';
@@ -16,10 +19,16 @@ import { AttelageModule } from './attelage/attelage.module.js';
 import { CommandeModule } from './commande/commande.module.js';
 import { PersonnelModule } from './personnel/personnel.module.js';
 import { PointageModule } from './pointage/pointage.module.js';
+import { EntiteModule } from './entite/entite.module.js';
+import { VilleModule } from './ville/ville.module.js';
+import { PaysModule } from './pays/pays.module.js';
 
 @Module({
   imports: [
     SocieteModule,
+    ClientModule,
+    FournisseurModule,
+    MessageModule,
     ContratModule,
     ContactModule,
     PointModule,
@@ -31,6 +40,9 @@ import { PointageModule } from './pointage/pointage.module.js';
     CommandeModule,
     PersonnelModule,
     PointageModule,
+    EntiteModule,
+    VilleModule,
+    PaysModule,
   ],
 })
 export class AppModule {}

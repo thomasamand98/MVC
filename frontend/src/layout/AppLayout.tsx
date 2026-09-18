@@ -1,5 +1,7 @@
-import { useEffect, useState, type ReactElement, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactElement, type ReactNode } from 'react'
 import { Sidebar, type MenuNode } from './Sidebar.js'
+import { TabBar } from './TabBar.js'
+import { TabsContext, type OpenTabRequest } from './TabsContext.js'
 import './AppLayout.css'
 import {
   DashboardIcon,
@@ -25,6 +27,7 @@ import { AttelagesPage } from '../features/attelages/AttelagesPage.js'
 import { CommandesPage } from '../features/commandes/CommandesPage.js'
 import { PersonnelPage } from '../features/personnel/PersonnelPage.js'
 import { PointagePage } from '../features/pointage/PointagePage.js'
+import { EntitePage } from '../features/entite/EntitePage.js'
 
 type MenuLeafConfig = { id: string; label: string; icon?: ReactNode; render: () => ReactElement }
 type MenuGroupConfig = { id: string; label: string; icon?: ReactNode; items: MenuLeafConfig[] }
@@ -86,7 +89,7 @@ const MENU: (MenuLeafConfig | MenuGroupConfig)[] = [
     icon: <ConfigurationIcon />,
     items: [
       { id: 'general', label: 'Général', render: () => <Dev /> },
-      { id: 'societe', label: 'Société', render: () => <Dev /> },
+      { id: 'societe', label: 'Société', render: () => <EntitePage /> },
       { id: 'bdd', label: 'Base de données', render: () => <Dev /> },
       { id: 'comptabilite', label: 'Comptabilité', render: () => <Dev /> },
       { id: 'enumerations', label: 'Enumérations', render: () => <Dev /> },
@@ -102,18 +105,54 @@ const MENU_NODES: MenuNode[] = MENU
 const MENU_ITEMS: MenuLeafConfig[] = MENU.flatMap((node) => ('items' in node ? node.items : [node]))
 
 const ACTIVE_MENU_STORAGE_KEY = 'mvc-template:activeMenuId'
+const OPEN_TABS_STORAGE_KEY = 'mvc-template:openTabs'
+const DEFAULT_TAB_ID = 'dashboard'
 
-// Récupération du dernier onglet actif
-function getInitialActiveId(): string {
+// Liste des onglets ouverts lors du dernier passage — filtrée sur les
+// entrées de menu qui existent toujours, jamais vide (retombe sur le
+// Tableau de bord).
+function getInitialOpenTabIds(): string[] {
+  try {
+    const stored: unknown = JSON.parse(localStorage.getItem(OPEN_TABS_STORAGE_KEY) ?? 'null')
+    const valid = Array.isArray(stored) ? stored.filter((id): id is string => typeof id === 'string' && MENU_ITEMS.some((item) => item.id === id)) : []
+    return valid.length > 0 ? valid : [DEFAULT_TAB_ID]
+  } catch {
+    return [DEFAULT_TAB_ID]
+  }
+}
+
+// Dernier onglet actif — doit faire partie des onglets ouverts ci-dessus,
+// sinon on retombe sur le premier d'entre eux.
+function getInitialActiveId(openTabIds: string[]): string {
   const stored = localStorage.getItem(ACTIVE_MENU_STORAGE_KEY)
-  if (stored && MENU_ITEMS.some((item) => item.id === stored)) return stored
-  return 'dashboard'
+  if (stored && openTabIds.includes(stored)) return stored
+  return openTabIds[0]
 }
 
 export function AppLayout() {
-  const [activeId, setActiveId] = useState(getInitialActiveId)
+  // Onglets ouverts façon navigateur (voir TabBar.tsx) : cliquer sur une
+  // entrée du menu déjà ouverte l'active simplement, sinon un nouvel
+  // onglet est ajouté à la suite — chaque page ouverte reste montée en
+  // arrière-plan (juste masquée, voir le rendu plus bas) pour conserver
+  // son état (filtres, pagination, ligne sélectionnée...) au changement
+  // d'onglet.
+  const [openTabIds, setOpenTabIds] = useState(getInitialOpenTabIds)
+  const [activeId, setActiveId] = useState(() => getInitialActiveId(openTabIds))
   const [mobileOpen, setMobileOpen] = useState(false)
-  const activeItem = MENU_ITEMS.find((item) => item.id === activeId)!
+  // Onglets ouverts dynamiquement (mode "Onglet" de CrudPage, voir
+  // view-modes/TabMode.tsx) : une fiche par ligne double-cliquée, en plus
+  // des entrées fixes du menu ci-dessus. Ne survivent pas à un rechargement
+  // (leur contenu capture des callbacks liés à la session en cours) —
+  // `getInitialOpenTabIds` les filtre déjà en ne gardant que les ids
+  // présents dans MENU_ITEMS.
+  const [dynamicTabs, setDynamicTabs] = useState<Record<string, { label: string; content: ReactNode }>>({})
+  // Le contenu d'un onglet dynamique est capturé une fois pour toutes (voir
+  // openOrActivateTab) : ses callbacks (ex. le bouton Annuler d'une fiche)
+  // referment alors pour toujours le `closeTab` de CE rendu-là. Sans cette
+  // ref, `handleCloseTab` lirait un `activeId` figé au moment où l'onglet a
+  // été ouvert au lieu de l'onglet réellement actif au moment du clic.
+  const activeIdRef = useRef(activeId)
+  activeIdRef.current = activeId
 
   // Bloque le scroll de la page pendant que le tiroir mobile est ouvert.
   useEffect(() => {
@@ -125,31 +164,100 @@ export function AppLayout() {
     }
   }, [mobileOpen])
 
-  // Affiche l'onglet et le stock comme dernier onglet actif
+  useEffect(() => {
+    localStorage.setItem(OPEN_TABS_STORAGE_KEY, JSON.stringify(openTabIds))
+  }, [openTabIds])
+
+  useEffect(() => {
+    localStorage.setItem(ACTIVE_MENU_STORAGE_KEY, activeId)
+  }, [activeId])
+
+  // Sélection depuis le menu : ajoute l'onglet s'il n'est pas déjà ouvert,
+  // puis l'active dans tous les cas (jamais de doublon).
   function handleSelect(itemId: string) {
+    setOpenTabIds((prev) => (prev.includes(itemId) ? prev : [...prev, itemId]))
     setActiveId(itemId)
-    localStorage.setItem(ACTIVE_MENU_STORAGE_KEY, itemId)
   }
 
+  // Ferme un onglet (de menu ou dynamique) : si ce n'était pas l'onglet
+  // actif, rien d'autre à faire. Sinon, bascule sur son voisin (précédent,
+  // sinon suivant) ou, s'il ne reste plus rien, rouvre le Tableau de bord.
+  // Sert aussi de `closeTab` du TabsContext (voir plus bas) — un onglet
+  // dynamique retire en plus son contenu de `dynamicTabs`.
+  function handleCloseTab(itemId: string) {
+    setOpenTabIds((prev) => {
+      const index = prev.indexOf(itemId)
+      const remaining = prev.filter((id) => id !== itemId)
+      if (itemId !== activeIdRef.current) return remaining
+      const fallbackId = remaining[index - 1] ?? remaining[index] ?? DEFAULT_TAB_ID
+      activeIdRef.current = fallbackId
+      setActiveId(fallbackId)
+      return remaining.includes(fallbackId) ? remaining : [...remaining, fallbackId]
+    })
+    setDynamicTabs((prev) => {
+      if (!(itemId in prev)) return prev
+      const next = { ...prev }
+      delete next[itemId]
+      return next
+    })
+  }
+
+  // Glisser-déposer d'un onglet (voir TabBar.tsx) : remplace simplement
+  // l'ordre, l'onglet actif ne change pas.
+  function handleReorderTabs(nextIds: string[]) {
+    setOpenTabIds(nextIds)
+  }
+
+  // Ouvre la fiche d'un enregistrement dans son propre onglet (mode
+  // "Onglet" de CrudPage, voir view-modes/TabMode.tsx), ou réactive celui
+  // déjà ouvert pour cet id sans toucher à son contenu (pour ne pas perdre
+  // la saisie en cours si on redouble-clique la même ligne).
+  function openOrActivateTab({ id, label, content }: OpenTabRequest) {
+    setDynamicTabs((prev) => (id in prev ? prev : { ...prev, [id]: { label, content } }))
+    setOpenTabIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
+    setActiveId(id)
+  }
+
+  function getTabLabel(id: string): string {
+    return dynamicTabs[id]?.label ?? MENU_ITEMS.find((item) => item.id === id)?.label ?? id
+  }
+
+  function getTabContent(id: string): ReactNode {
+    return dynamicTabs[id]?.content ?? MENU_ITEMS.find((item) => item.id === id)?.render() ?? null
+  }
+
+  const openTabs = openTabIds.map((id) => ({ id, label: getTabLabel(id) }))
+
   return (
-    <div className="app-layout">
-      <button
-        type="button"
-        className="app-layout-menu-toggle"
-        onClick={() => setMobileOpen((prev) => !prev)}
-        aria-label={mobileOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
-        aria-expanded={mobileOpen}
-      >
-        {mobileOpen ? <CloseIcon /> : <MenuIcon />}
-      </button>
-      <Sidebar
-        nodes={MENU_NODES}
-        activeId={activeId}
-        onSelect={handleSelect}
-        open={mobileOpen}
-        onClose={() => setMobileOpen(false)}
-      />
-      <div style={{ flex: 1, minWidth: 0 }}>{activeItem.render()}</div>
-    </div>
+    <TabsContext.Provider value={{ openOrActivateTab, closeTab: handleCloseTab }}>
+      <div className="app-layout">
+        <button
+          type="button"
+          className="app-layout-menu-toggle"
+          onClick={() => setMobileOpen((prev) => !prev)}
+          aria-label={mobileOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+          aria-expanded={mobileOpen}
+        >
+          {mobileOpen ? <CloseIcon /> : <MenuIcon />}
+        </button>
+        <Sidebar
+          nodes={MENU_NODES}
+          activeId={activeId}
+          onSelect={handleSelect}
+          open={mobileOpen}
+          onClose={() => setMobileOpen(false)}
+        />
+        <div className="app-content">
+          <TabBar tabs={openTabs} activeId={activeId} onSelect={setActiveId} onClose={handleCloseTab} onReorder={handleReorderTabs} />
+          <div className="app-content-page">
+            {openTabIds.map((id) => (
+              <div key={id} hidden={id !== activeId}>
+                {getTabContent(id)}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </TabsContext.Provider>
   )
 }

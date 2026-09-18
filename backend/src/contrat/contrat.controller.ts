@@ -9,10 +9,11 @@ export class ContratController {
   constructor(private readonly contratService: ContratService) {}
 
   // ?page=1&pageSize=25 : optionnels — omis, renvoie toute la table (comme
-  // avant). Voir ContratService.getContrats pour le détail.
+  // avant). ?societeId=X : optionnel, ne renvoie que les contrats de cette
+  // société. Voir ContratService.getContrats pour le détail.
   @Get('contrats')
-  async getContrats(@Query('page') page?: string, @Query('pageSize') pageSize?: string) {
-    return this.contratService.getContrats(page ? Number(page) : undefined, pageSize ? Number(pageSize) : undefined);
+  async getContrats(@Query('page') page?: string, @Query('pageSize') pageSize?: string, @Query('societeId') societeId?: string) {
+    return this.contratService.getContrats(page ? Number(page) : undefined, pageSize ? Number(pageSize) : undefined, societeId);
   }
 
   @Get('contrats/:id')

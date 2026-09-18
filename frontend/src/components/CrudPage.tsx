@@ -1,9 +1,14 @@
 import { useState, type Dispatch, type ReactNode, type SetStateAction } from 'react'
 import type { ColumnDef, RowData } from '@tanstack/react-table'
 import { features } from '../lib/tableFeatures.js'
+import { useTabsContext } from '../layout/TabsContext.js'
 import { DataTable } from './DataTable.js'
-import { Modal } from './Modal.js'
 import { PageActions } from './PageActions.js'
+import { ROW_EXPAND_MODE_ID, RowFicheContent } from './view-modes/RowExpandMode.js'
+import { TAB_MODE_ID } from './view-modes/TabMode.js'
+import { useViewModePreference } from './view-modes/useViewModePreference.js'
+import { ViewModeSelector } from './view-modes/ViewModeSelector.js'
+import { viewModes } from './view-modes/index.js'
 import './CrudPage.css'
 
 function ChevronLeftIcon() {
@@ -101,15 +106,90 @@ export function CrudPage<T extends RowData, TDto, TDetail = T>({
   const [modalMode, setModalMode] = useState<'create' | 'edit' | null>(null)
   const [editRecord, setEditRecord] = useState<TDetail | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
+  const [viewModeId, setViewModeId] = useViewModePreference()
+  const { openOrActivateTab, closeTab } = useTabsContext()
 
   if (loading) return <p>{loadingLabel}</p>
   if (error) return <p>Erreur : {error}</p>
+
+  const isTabMode = viewModeId === TAB_MODE_ID
+
+  // Mode "Onglet" (voir view-modes/TabMode.tsx) : un id stable par
+  // enregistrement, pour réactiver son onglet plutôt que d'en rouvrir un
+  // second au redouble-clic.
+  function recordTabId(recordId: string | null): string {
+    return recordId ? `record:${title}:${recordId}` : `record:${title}:new`
+  }
+
+  // Libellé de l'onglet d'une ligne : nom de la page + valeur de la
+  // première colonne affichée (ex. « Sociétés: YARA TERTRE »), avec repli
+  // sur l'id si la première colonne n'est pas un accesseur simple.
+  function getRowLabel(row: T): string {
+    const firstColumn = columns[0] as unknown as { accessorKey?: string } | undefined
+    const key = firstColumn?.accessorKey
+    const value = key ? (row as unknown as Record<string, unknown>)[key] : undefined
+    return value !== null && value !== undefined && value !== '' ? String(value) : getRowId(row)
+  }
+
+  async function handleSubmitTab(mode: 'create' | 'edit', recordId: string | null, dto: TDto) {
+    const tabId = recordTabId(recordId)
+    try {
+      if (mode === 'edit' && recordId) {
+        const updated = await update(recordId, dto)
+        if (pagination && refetch) {
+          await refetch()
+        } else {
+          setData((prev) => prev.map((row) => (getRowId(row) === recordId ? updated : row)))
+        }
+      } else {
+        const created = await create(dto)
+        if (pagination && refetch) {
+          await refetch()
+        } else {
+          setData((prev) => [...prev, created])
+        }
+      }
+      closeTab(tabId)
+    } catch (err) {
+      alert(`Échec de l'enregistrement : ${err instanceof Error ? err.message : 'erreur inconnue'}`)
+    }
+  }
+
+  // Ouvre la fiche de `recordId` (ou une fiche de création si null) dans
+  // son propre onglet — voir TabsContext.tsx, fourni par AppLayout.tsx.
+  function openRecordTab(mode: 'create' | 'edit', recordId: string | null, initial: TDetail | null, label: string) {
+    const tabId = recordTabId(recordId)
+    const content = renderForm({
+      initial,
+      onSubmit: (dto) => handleSubmitTab(mode, recordId, dto),
+      onCancel: () => closeTab(tabId),
+    })
+    openOrActivateTab({ id: tabId, label, content })
+  }
+
+  async function handleRowDoubleClickTab(row: T) {
+    const id = getRowId(row)
+    const label = `${title}: ${getRowLabel(row)}`
+    if (!getDetail) {
+      openRecordTab('edit', id, row as unknown as TDetail, label)
+      return
+    }
+    try {
+      openRecordTab('edit', id, await getDetail(id), label)
+    } catch (err) {
+      alert(`Échec du chargement : ${err instanceof Error ? err.message : 'erreur inconnue'}`)
+    }
+  }
 
   function handleRowClick(row: T) {
     setSelectedId(getRowId(row))
   }
 
   async function handleRowDoubleClick(row: T) {
+    if (isTabMode) {
+      await handleRowDoubleClickTab(row)
+      return
+    }
     if (detailLoading) return
     const id = getRowId(row)
     setSelectedId(id)
@@ -172,16 +252,22 @@ export function CrudPage<T extends RowData, TDto, TDetail = T>({
 
   const totalCount = pagination?.total ?? data.length
 
-  return (
-    <div>
-      <div className="page-header">
-        <h2>{title} ({totalCount})</h2>
-        <PageActions
-          onCreate={() => { setSelectedId(null); setModalMode('create') }}
-          onDelete={handleDelete}
-          deleteDisabled={!selectedId}
-        />
-      </div>
+  const ModeComponent = viewModes.find((m) => m.id === viewModeId)?.Component ?? viewModes[0].Component
+
+  const formTitle = modalMode === 'edit' ? editModalTitle : createModalTitle
+  const formContent = modalMode
+    ? renderForm({ initial: modalMode === 'edit' ? editRecord : null, onSubmit: handleSubmit, onCancel: () => setModalMode(null) })
+    : null
+
+  // Mode "Ligne + bloc" (voir RowExpandMode.tsx) : la modification déplie la
+  // ligne directement dans le tableau au lieu d'utiliser le bloc du haut —
+  // le formulaire ne va donc que dans un seul des deux emplacements à la
+  // fois (jamais les deux, pour ne pas monter le formulaire deux fois).
+  const isRowExpandMode = viewModeId === ROW_EXPAND_MODE_ID
+  const modeFormSlot = isRowExpandMode ? (modalMode === 'create' ? formContent : null) : formContent
+
+  const tableArea = (
+    <>
       <DataTable
         data={data}
         columns={columns}
@@ -189,6 +275,17 @@ export function CrudPage<T extends RowData, TDto, TDetail = T>({
         selectedRowId={selectedId}
         onRowClick={handleRowClick}
         onRowDoubleClick={handleRowDoubleClick}
+        exportFileName={title}
+        expandedRowId={isRowExpandMode && modalMode === 'edit' ? selectedId : null}
+        renderExpandedRow={
+          isRowExpandMode && modalMode === 'edit'
+            ? () => (
+                <RowFicheContent title={formTitle} onClose={() => setModalMode(null)}>
+                  {formContent}
+                </RowFicheContent>
+              )
+            : undefined
+        }
       />
       {pagination && (() => {
         // pageSize=0 ("Tous") : une seule page, le back renvoie tout sans
@@ -237,11 +334,37 @@ export function CrudPage<T extends RowData, TDto, TDetail = T>({
           </div>
         )
       })()}
-      {modalMode && (
-        <Modal title={modalMode === 'edit' ? editModalTitle : createModalTitle} onClose={() => setModalMode(null)}>
-          {renderForm({ initial: modalMode === 'edit' ? editRecord : null, onSubmit: handleSubmit, onCancel: () => setModalMode(null) })}
-        </Modal>
-      )}
+    </>
+  )
+
+  return (
+    <div>
+      <div className="page-header">
+        <h2>{title} ({totalCount})</h2>
+        <div className="page-header-actions">
+          <ViewModeSelector value={viewModeId} onChange={setViewModeId} />
+          <PageActions
+            onCreate={() => {
+              if (isTabMode) {
+                openRecordTab('create', null, null, createModalTitle)
+                return
+              }
+              setSelectedId(null)
+              setModalMode('create')
+            }}
+            onDelete={handleDelete}
+            deleteDisabled={!selectedId}
+          />
+        </div>
+      </div>
+      <ModeComponent
+        open={Boolean(modalMode)}
+        mode={modalMode}
+        title={formTitle}
+        onClose={() => setModalMode(null)}
+        table={tableArea}
+        form={modeFormSlot}
+      />
     </div>
   )
 }
