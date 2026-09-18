@@ -388,7 +388,7 @@ model Document {
   Commentaire                  String?      @db.VarChar(1000)
   Categorie                    Int?         @default(0)
   Verrouille                   Int?         @default(0) @db.TinyInt
-  IDDOCUMENTS_VERSION_courante Bytes?       @default(dbgenerated("(unhex(_utf8mb4\\'0000000000000000000000000000000000000000000000000000000000000000\\'))")) @db.Binary(32)
+  IDDOCUMENTS_VERSION_courante Bytes?       @default(dbgenerated("(unhex(_utf8mb4'0000000000000000000000000000000000000000000000000000000000000000'))")) @db.Binary(32)
   Document_physique            Bytes?
   Version                      Int?         @default(0)
   IDClient                     Int?         @default(0)
@@ -416,7 +416,7 @@ model Document {
 
 model DocumentVersion {
   IDDOCUMENTS_VERSION         BigInt       @id @default(autoincrement())
-  IDDOCUMENTS                 Bytes?       @default(dbgenerated("(unhex(_utf8mb4\\'0000000000000000000000000000000000000000000000000000000000000000\\'))")) @db.Binary(32)
+  IDDOCUMENTS                 Bytes?       @default(dbgenerated("(unhex(_utf8mb4'0000000000000000000000000000000000000000000000000000000000000000'))")) @db.Binary(32)
   Nom_fichier                 String?      @db.VarChar(100)
   Chemin                      String?      @db.VarChar(500)
   Version                     BigInt?      @default(0)
@@ -703,7 +703,7 @@ model LienDocument {
   IDLIEN_DOCUMENTS            BigInt       @id @default(autoincrement())
   TYPE                        Int?         @default(0)
   IDReferent                  BigInt?      @default(0)
-  IDDOCUMENTS                 Bytes?       @default(dbgenerated("(unhex(_utf8mb4\\'0000000000000000000000000000000000000000000000000000000000000000\\'))")) @db.Binary(32)
+  IDDOCUMENTS                 Bytes?       @default(dbgenerated("(unhex(_utf8mb4'0000000000000000000000000000000000000000000000000000000000000000'))")) @db.Binary(32)
   Date_heure_creation         DateTime?    @db.Timestamp(0)
   Date_heure_modification     DateTime?    @db.Timestamp(0)
   IDUTILISATEURS_createur     BigInt?      @default(0)
