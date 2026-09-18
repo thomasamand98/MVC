@@ -7,10 +7,9 @@
 import { Module } from '@nestjs/common';
 import { SocieteController } from './societe.controller.js';
 import { SocietesService } from './societe.service.js';
-import { PrismaService } from '../prisma/prisma.service.js';
 
 @Module({
   controllers: [SocieteController],
-  providers: [SocietesService, PrismaService],
+  providers: [SocietesService],
 })
 export class SocieteModule {}

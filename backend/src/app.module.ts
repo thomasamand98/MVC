@@ -4,6 +4,7 @@
 // Pour ajouter une nouvelle fonctionnalité, on créerait un nouveau module
 // et on l'ajouterait dans le tableau `imports` ci-dessous.
 import { Module } from '@nestjs/common';
+import { PrismaModule } from './prisma/prisma.module.js';
 import { SocieteModule } from './societe/societe.module.js';
 import { ClientModule } from './client/client.module.js';
 import { FournisseurModule } from './fournisseur/fournisseur.module.js';
@@ -25,6 +26,7 @@ import { PaysModule } from './pays/pays.module.js';
 
 @Module({
   imports: [
+    PrismaModule,
     SocieteModule,
     ClientModule,
     FournisseurModule,
