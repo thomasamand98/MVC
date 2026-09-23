@@ -25,10 +25,12 @@ function toDto(detail: EntiteDetail): EntiteDto {
     Seveur_SMTP: detail.Seveur_SMTP ?? '',
     Port_SMTP: detail.Port_SMTP ?? 0,
     Utilisateur_SMTP: detail.Utilisateur_SMTP ?? '',
-    MDP_SMTP: detail.MDP_SMTP ?? '',
+    // Jamais renvoyés par l'API : vides tant que l'utilisateur n'en saisit pas
+    // un nouveau (vide = inchangé côté serveur).
+    MDP_SMTP: '',
     TypeConnexion_SMTP: detail.TypeConnexion_SMTP ?? 0,
     Utilisateur_smtp_planning: detail.Utilisateur_smtp_planning ?? '',
-    MDP_SMTP_Planning: detail.MDP_SMTP_Planning ?? '',
+    MDP_SMTP_Planning: '',
     Adresse1: detail.Adresse?.Adresse1 ?? '',
     Adresse2: detail.Adresse?.Adresse2 ?? '',
     Adresse3: detail.Adresse?.Adresse3 ?? '',
@@ -36,6 +38,7 @@ function toDto(detail: EntiteDetail): EntiteDto {
     Localite: detail.Adresse?.Localite ?? '',
     Pays: detail.Adresse?.Pays ?? '',
     Pays_full_name: detail.Adresse?.Pays_full_name ?? '',
+    Logo: detail.Logo ?? '',
   }
 }
 
@@ -79,7 +82,14 @@ export function EntitePage() {
           {submitting ? 'Enregistrement...' : 'Enregistrer'}
         </button>
       </div>
-      <EntiteForm formId={FORM_ID} form={form} onChange={setForm} onSubmit={handleSubmit} />
+      <EntiteForm
+        formId={FORM_ID}
+        form={form}
+        smtpPasswordSet={data?.MDP_SMTP_defini ?? false}
+        smtpPlanningPasswordSet={data?.MDP_SMTP_Planning_defini ?? false}
+        onChange={setForm}
+        onSubmit={handleSubmit}
+      />
     </div>
   )
 }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { API_URL } from '../../lib/config.js'
+import { apiJson } from '../../lib/api.js'
 
 // Forme de l'entité telle que renvoyée par GET /entite (voir
 // backend/src/entite/entite.service.ts, entiteSelect) — ressource
@@ -22,11 +22,17 @@ export type EntiteDetail = {
   Seveur_SMTP: string | null
   Port_SMTP: number | null
   Utilisateur_SMTP: string | null
-  MDP_SMTP: string | null
+  // Les mots de passe SMTP ne sont jamais renvoyés par le backend : seulement
+  // s'ils sont renseignés (voir EntiteService.getEntite).
+  MDP_SMTP_defini: boolean
   TypeConnexion_SMTP: number | null
   Utilisateur_smtp_planning: string | null
-  MDP_SMTP_Planning: string | null
+  MDP_SMTP_Planning_defini: boolean
   IDADRESSES: string | null
+  // Data URI base64 ("data:image/png;base64,...", voir EntiteForm.tsx) —
+  // prête à servir directement de `src` d'une <img>, ou null si aucun logo
+  // n'a été importé.
+  Logo: string | null
   Adresse: {
     Adresse1: string | null
     Adresse2: string | null
@@ -58,6 +64,8 @@ export type EntiteDto = {
   Seveur_SMTP: string
   Port_SMTP: number
   Utilisateur_SMTP: string
+  // Mots de passe SMTP : '' = inchangé (le backend ne remplace la valeur
+  // enregistrée que si une nouvelle est envoyée).
   MDP_SMTP: string
   TypeConnexion_SMTP: number
   Utilisateur_smtp_planning: string
@@ -69,9 +77,11 @@ export type EntiteDto = {
   Localite: string
   Pays: string
   Pays_full_name: string
+  // Logo : voir EntiteDetail.Logo. Chaîne vide = supprime le logo
+  // (contrairement aux mots de passe SMTP, où vide veut dire « inchangé » —
+  // le formulaire connaît toujours le logo actuel, affiché en aperçu).
+  Logo: string
 }
-
-const entiteUrl = () => `${API_URL}/entite`
 
 // Récupère et modifie l'entité (coordonnées de la société courante,
 // paramètres bancaires et SMTP) — ressource singleton (GET/PATCH /entite,
@@ -86,11 +96,7 @@ export function useEntite() {
   const refetch = useCallback(() => {
     setLoading(true)
     setError(null)
-    return fetch(entiteUrl())
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        return res.json() as Promise<EntiteDetail>
-      })
+    return apiJson<EntiteDetail>('entite')
       .then(setData)
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false))
@@ -101,13 +107,11 @@ export function useEntite() {
   }, [refetch])
 
   async function update(dto: EntiteDto) {
-    const res = await fetch(entiteUrl(), {
+    const updated = await apiJson<EntiteDetail>('entite', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(dto),
     })
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    const updated = (await res.json()) as EntiteDetail
     setData(updated)
     return updated
   }

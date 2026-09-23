@@ -5,11 +5,16 @@
 // le DOM par main.tsx.
 import './App.css'
 import { AppLayout } from './layout/AppLayout.js'
+import { AuthProvider } from './auth/AuthProvider.js'
 
+// AuthProvider affiche l'écran de connexion tant que l'utilisateur n'est
+// pas identifié, puis l'application (voir auth/AuthProvider.tsx).
 function App() {
   return (
     <main style={{ width: '100%', maxWidth: '1700px', margin: '2rem auto', padding: '0 1rem', fontFamily: 'sans-serif', boxSizing: 'border-box' }}>
-      <AppLayout />
+      <AuthProvider>
+        <AppLayout />
+      </AuthProvider>
     </main>
   )
 }

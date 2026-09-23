@@ -1,0 +1,487 @@
+.contrat-form {
+  --contrat-accent: #03c1ec;
+  --contrat-accent-bg: rgba(3, 193, 236, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+/* La modale générique (components/Modal.css) est limitée à 480px, trop
+   étroit pour deux colonnes de cartes : élargie pour cette fiche seulement
+   (les autres modes d'affichage ont leur propre largeur). */
+.modal-panel:has(.contrat-form) {
+  max-width: min(1100px, 100%);
+}
+
+/* ---------- Onglets (Détail / Prestations / Factures) ---------- */
+
+.contrat-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.6rem;
+}
+
+.contrat-tabs-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+/* ---------- Bouton « Voir le PDF » ---------- */
+
+.contrat-pdf {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.contrat-pdf-select {
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text-h);
+  font-family: inherit;
+  font-size: 0.85rem;
+  max-width: 12rem;
+}
+
+.contrat-pdf-error {
+  color: var(--danger);
+  font-size: 0.8rem;
+}
+
+.contrat-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: none;
+  color: var(--text);
+  padding: 0.35rem 0.8rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.contrat-tab:hover:not(:disabled) {
+  background: var(--contrat-accent-bg);
+  color: var(--text-h);
+}
+
+.contrat-tab.active {
+  background: var(--contrat-accent);
+  color: #fff;
+}
+
+.contrat-tab:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.contrat-tab-count {
+  min-width: 1.3rem;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: var(--code-bg);
+  color: var(--text-h);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.contrat-tab.active .contrat-tab-count {
+  background: rgba(255, 255, 255, 0.28);
+  color: #fff;
+}
+
+/* ---------- Détail : deux colonnes de cartes ---------- */
+
+.contrat-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* auto-fit plutôt qu'une media query sur le viewport : la fiche vit dans des
+   conteneurs de largeurs très différentes selon le mode d'affichage choisi
+   (voir components/view-modes/) — les deux colonnes passent seules l'une
+   sous l'autre dès que le conteneur n'a plus la place. */
+.contrat-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.contrat-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.contrat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.9rem 1rem 1rem;
+  min-width: 0;
+}
+
+.contrat-card-title {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-h);
+}
+
+.contrat-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.contrat-row > .contrat-field {
+  flex: 1 1 8rem;
+}
+
+.contrat-row-center {
+  align-items: flex-end;
+}
+
+.contrat-grow {
+  flex: 2 1 12rem !important;
+}
+
+.contrat-field-narrow {
+  flex: 0 1 8rem !important;
+}
+
+/* ---------- Champs ---------- */
+
+.contrat-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-h);
+  min-width: 0;
+}
+
+.contrat-field input,
+.contrat-field select,
+.contrat-field textarea {
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text-h);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 400;
+  min-width: 0;
+}
+
+.contrat-field textarea {
+  resize: vertical;
+}
+
+.contrat-field input:focus,
+.contrat-field select:focus,
+.contrat-field textarea:focus {
+  outline: none;
+  border-color: var(--contrat-accent);
+  box-shadow: 0 0 0 3px var(--contrat-accent-bg);
+}
+
+.contrat-field input:read-only,
+.contrat-field input:disabled {
+  background: var(--code-bg);
+  color: var(--text);
+  cursor: default;
+}
+
+.contrat-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-h);
+  cursor: pointer;
+  padding-bottom: 0.3rem;
+}
+
+.contrat-checkbox input {
+  accent-color: var(--contrat-accent);
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+}
+
+.contrat-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.contrat-muted {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.85rem;
+}
+
+/* ---------- Conditions CMR ---------- */
+
+.contrat-conditions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.contrat-conditions-add {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.6rem;
+}
+
+.contrat-conditions-libelle {
+  flex: 1 1 10rem;
+}
+
+.contrat-conditions-box {
+  padding-bottom: 0.55rem;
+}
+
+.contrat-conditions-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  max-height: 14rem;
+  overflow-y: auto;
+}
+
+.contrat-conditions-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.88rem;
+  color: var(--text-h);
+}
+
+.contrat-conditions-item:last-child {
+  border-bottom: none;
+}
+
+.contrat-conditions-text {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.contrat-conditions-item .contrat-checkbox {
+  padding-bottom: 0;
+}
+
+/* ---------- Chiffres clés ---------- */
+
+.contrat-kpi {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.contrat-kpi-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.contrat-kpi-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Boutons ---------- */
+
+.contrat-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.contrat-button {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text-h);
+  padding: 0.5rem 0.9rem;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.contrat-button:hover {
+  background: var(--code-bg);
+}
+
+.contrat-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.contrat-icon-button.primary {
+  background: var(--contrat-accent);
+  color: #fff;
+}
+
+.contrat-icon-button.primary:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+.contrat-icon-button.danger:hover:not(:disabled) {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.contrat-icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.contrat-tab:focus-visible,
+.contrat-button:focus-visible,
+.contrat-icon-button:focus-visible {
+  outline: 2px solid var(--contrat-accent);
+  outline-offset: 2px;
+}
+
+/* ---------- Onglets Prestations / Factures ---------- */
+
+.contrat-table-wrapper {
+  overflow-x: auto;
+}
+
+.contrat-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.contrat-table th {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.contrat-table td {
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-h);
+  overflow-wrap: anywhere;
+}
+
+.contrat-table tbody tr:hover {
+  background: var(--contrat-accent-bg);
+}
+
+.contrat-table .contrat-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Dates et numéros : jamais coupés sur deux lignes (le tableau défile
+   horizontalement si besoin). */
+.contrat-table .contrat-nowrap {
+  white-space: nowrap;
+}
+
+.contrat-badge {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.5rem;
+  border-radius: 999px;
+  background: var(--code-bg);
+  color: var(--text-h);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+/* Mobile : chaque ligne devient une carte label/valeur, comme le DataTable
+   (voir components/DataTable.css). */
+@media (max-width: 640px) {
+  .contrat-table thead {
+    display: none;
+  }
+
+  .contrat-table,
+  .contrat-table tbody,
+  .contrat-table tr,
+  .contrat-table td {
+    display: block;
+  }
+
+  .contrat-table tr {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.25rem 0;
+    margin-bottom: 0.5rem;
+  }
+
+  .contrat-table td {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: none;
+    padding: 0.3rem 0.75rem;
+    text-align: right;
+  }
+
+  .contrat-table td[data-label]::before {
+    content: attr(data-label);
+    color: var(--text);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    text-align: left;
+  }
+}

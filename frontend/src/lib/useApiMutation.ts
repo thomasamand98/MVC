@@ -1,15 +1,15 @@
-import { API_URL } from './config'
+import { apiFetch } from './api'
 
 // Envoie une requête d'écriture (create/update/delete) à l'API backend et
 // parse la réponse JSON si elle en contient une (DELETE renvoie un corps
-// vide côté NestJS, voir *.controller.ts).
+// vide côté NestJS, voir *.controller.ts). En cas d'erreur, l'ApiError levée
+// (voir lib/errors.ts) porte le message du serveur.
 async function request<T>(path: string, method: string, body?: unknown): Promise<T> {
-  const res = await fetch(`${API_URL}/${path}`, {
+  const res = await apiFetch(path, {
     method,
     headers: body !== undefined ? { 'Content-Type': 'application/json' } : undefined,
     body: body !== undefined ? JSON.stringify(body) : undefined,
   })
-  if (!res.ok) throw new Error(`HTTP ${res.status}`)
   const text = await res.text()
   return (text ? JSON.parse(text) : undefined) as T
 }

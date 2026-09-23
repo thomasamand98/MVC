@@ -5,6 +5,8 @@ import { CrudPage } from '../../components/CrudPage.js'
 import { ContratForm, type ContratDto } from './ContratForm.js'
 import { useApiMutation } from '../../lib/useApiMutation.js'
 import { useSocietes } from '../societes/useSocietes.js'
+import { useTypesFacture } from './useTypesFacture.js'
+import { useDocumentTemplates } from '../documents/useDocumentTemplates.js'
 
 const DEFAULT_PAGE_SIZE = 25
 
@@ -17,6 +19,10 @@ export function ContratsPage() {
   // passée au formulaire pour le sélecteur Société — évite de la
   // recharger à chaque ouverture de la modale (voir ContratForm.tsx).
   const { societes } = useSocietes()
+  // Idem pour le sélecteur « Type facture ».
+  const typesFacture = useTypesFacture()
+  // Idem pour le bouton « Voir le PDF » (voir ContratPdfButton.tsx).
+  const { templates: documentTemplates } = useDocumentTemplates('CONTRAT')
 
   return (
     <CrudPage<Contrat, ContratDto, ContratDetail>
@@ -44,7 +50,7 @@ export function ContratsPage() {
       createModalTitle="Nouveau contrat"
       editModalTitle="Modifier le contrat"
       renderForm={({ initial, onSubmit, onCancel }) => (
-        <ContratForm initial={initial} societes={societes} onSubmit={onSubmit} onCancel={onCancel} />
+        <ContratForm initial={initial} societes={societes} typesFacture={typesFacture} documentTemplates={documentTemplates} onSubmit={onSubmit} onCancel={onCancel} />
       )}
     />
   )

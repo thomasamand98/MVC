@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react'
+import { useAuth } from '../auth/AuthContext.js'
 import './Sidebar.css'
 
 export type MenuItem = {
@@ -41,6 +42,7 @@ type SidebarProps = {
 // de 768px, la sidebar devient un tiroir masqué par défaut (piloté par
 // `open`/`onClose`) : sélectionner un item la referme automatiquement.
 export function Sidebar({ nodes, activeId, onSelect, open, onClose }: SidebarProps) {
+  const { login, canSignOut, signOut } = useAuth()
   const [openGroups, setOpenGroups] = useState<Set<string>>(
     () =>
       new Set(
@@ -114,6 +116,17 @@ export function Sidebar({ nodes, activeId, onSelect, open, onClose }: SidebarPro
             </div>
           )
         })}
+
+        {/* Utilisateur connecté et déconnexion — uniquement quand l'écran de
+            connexion est activé (voir auth/AuthProvider.tsx). */}
+        {canSignOut && (
+          <div className="sidebar-user">
+            <span className="sidebar-user-name" title={login}>{login}</span>
+            <button type="button" className="sidebar-logout" onClick={() => void signOut()}>
+              Se déconnecter
+            </button>
+          </div>
+        )}
       </nav>
     </>
   )

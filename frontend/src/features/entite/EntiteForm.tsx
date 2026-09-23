@@ -1,5 +1,5 @@
-import { useEffect, useState, type FormEvent } from 'react'
-import { API_URL } from '../../lib/config.js'
+import { useEffect, useRef, useState, type ChangeEvent, type DragEvent, type FormEvent } from 'react'
+import { apiJson } from '../../lib/api.js'
 import type { EntiteDto } from './useEntite.js'
 import './EntiteForm.css'
 
@@ -19,25 +19,73 @@ const CONNEXION_SMTP_OPTIONS = [
 type Props = {
   formId: string
   form: EntiteDto
+  // Mots de passe SMTP déjà enregistrés (jamais renvoyés par l'API, voir
+  // useEntite.ts) : sert seulement à indiquer « inchangé » dans le champ.
+  smtpPasswordSet: boolean
+  smtpPlanningPasswordSet: boolean
   onChange: (form: EntiteDto) => void
   onSubmit: (e: FormEvent) => void
 }
 
-const apiUrl = (path: string) => `${API_URL}/${path}`
+const UNCHANGED_PLACEHOLDER = '•••••••• (inchangé)'
+
+// Convertit un fichier image en data URI base64 ("data:image/png;base64,..."),
+// le format attendu par EntiteDto.Logo (voir useEntite.ts) — envoyé tel quel
+// au backend, qui le stocke tel quel (voir entite.service.ts) : prêt à
+// resservir directement de `src` d'une <img>, sans aller-retour supplémentaire.
+function readImageAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = () => reject(reader.error ?? new Error('Lecture du fichier impossible'))
+    reader.readAsDataURL(file)
+  })
+}
 
 // Formulaire "Coordonnée entreprise" — pas de bouton de soumission ici, il
 // vit dans l'en-tête de EntitePage.tsx (attribut `form`, voir formId) pour
 // rester visible en haut de page comme dans la maquette fournie par
 // l'utilisateur.
-export function EntiteForm({ formId, form, onChange, onSubmit }: Props) {
+export function EntiteForm({ formId, form, smtpPasswordSet, smtpPlanningPasswordSet, onChange, onSubmit }: Props) {
   const [villeOptions, setVilleOptions] = useState<VilleOption[]>([])
   const [paysOptions, setPaysOptions] = useState<PaysOption[]>([])
+  const [logoDragOver, setLogoDragOver] = useState(false)
+  const [logoError, setLogoError] = useState<string | null>(null)
+  const logoFileInputRef = useRef<HTMLInputElement>(null)
+
+  // Le logo n'est enregistré qu'au clic sur "Enregistrer" comme le reste du
+  // formulaire (voir EntitePage.tsx) — pas d'envoi immédiat au dépôt, pour
+  // rester cohérent avec tous les autres champs de cette fiche.
+  async function applyLogoFile(file: File | undefined) {
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      setLogoError('Le logo doit être une image (PNG, JPG...)')
+      return
+    }
+    try {
+      const dataUrl = await readImageAsDataUrl(file)
+      setLogoError(null)
+      onChange({ ...form, Logo: dataUrl })
+    } catch {
+      setLogoError('Lecture du fichier impossible')
+    }
+  }
+
+  function handleLogoDrop(e: DragEvent<HTMLDivElement>) {
+    e.preventDefault()
+    setLogoDragOver(false)
+    applyLogoFile(e.dataTransfer.files[0])
+  }
+
+  function handleLogoFileInput(e: ChangeEvent<HTMLInputElement>) {
+    applyLogoFile(e.target.files?.[0])
+    e.target.value = ''
+  }
 
   // Liste des pays : ~240 lignes, chargée une seule fois (voir
   // backend/src/pays/pays.service.ts).
   useEffect(() => {
-    fetch(apiUrl('pays'))
-      .then((res) => res.json() as Promise<{ pays: PaysOption[] }>)
+    apiJson<{ pays: PaysOption[] }>('pays')
       .then((json) => setPaysOptions(json.pays))
       .catch(() => {})
   }, [])
@@ -51,8 +99,7 @@ export function EntiteForm({ formId, form, onChange, onSubmit }: Props) {
       return
     }
     const timeout = setTimeout(() => {
-      fetch(apiUrl(`villes?cp=${encodeURIComponent(form.CP)}`))
-        .then((res) => res.json() as Promise<{ villes: VilleOption[] }>)
+      apiJson<{ villes: VilleOption[] }>(`villes?cp=${encodeURIComponent(form.CP)}`)
         .then((json) => setVilleOptions(json.villes))
         .catch(() => {})
     }, 300)
@@ -74,6 +121,39 @@ export function EntiteForm({ formId, form, onChange, onSubmit }: Props) {
 
   return (
     <form id={formId} className="entite-form" onSubmit={onSubmit}>
+      <div
+        className={`entite-logo-drop${logoDragOver ? ' drag-over' : ''}`}
+        onDragOver={(e) => {
+          e.preventDefault()
+          setLogoDragOver(true)
+        }}
+        onDragLeave={() => setLogoDragOver(false)}
+        onDrop={handleLogoDrop}
+        onClick={() => logoFileInputRef.current?.click()}
+        role="button"
+        tabIndex={0}
+      >
+        {form.Logo ? (
+          <img src={form.Logo} alt="Logo de l’entreprise" className="entite-logo-preview" />
+        ) : (
+          <span className="entite-logo-placeholder">Glissez une image ici, ou cliquez pour choisir un logo</span>
+        )}
+        <input ref={logoFileInputRef} type="file" accept="image/*" hidden onChange={handleLogoFileInput} />
+        {form.Logo && (
+          <button
+            type="button"
+            className="entite-logo-remove"
+            onClick={(e) => {
+              e.stopPropagation()
+              onChange({ ...form, Logo: '' })
+            }}
+          >
+            Retirer le logo
+          </button>
+        )}
+      </div>
+      {logoError && <p className="entite-logo-error">{logoError}</p>}
+
       <div className="entite-form-grid">
         <label className="entite-field">
           Nom
@@ -219,11 +299,23 @@ export function EntiteForm({ formId, form, onChange, onSubmit }: Props) {
         </div>
         <label className="entite-field">
           Mot de passe :
-          <input type="password" value={form.MDP_SMTP} onChange={(e) => onChange({ ...form, MDP_SMTP: e.target.value })} />
+          <input
+            type="password"
+            value={form.MDP_SMTP}
+            placeholder={smtpPasswordSet ? UNCHANGED_PLACEHOLDER : undefined}
+            autoComplete="new-password"
+            onChange={(e) => onChange({ ...form, MDP_SMTP: e.target.value })}
+          />
         </label>
         <label className="entite-field">
           Mot de passe :
-          <input type="password" value={form.MDP_SMTP_Planning} onChange={(e) => onChange({ ...form, MDP_SMTP_Planning: e.target.value })} />
+          <input
+            type="password"
+            value={form.MDP_SMTP_Planning}
+            placeholder={smtpPlanningPasswordSet ? UNCHANGED_PLACEHOLDER : undefined}
+            autoComplete="new-password"
+            onChange={(e) => onChange({ ...form, MDP_SMTP_Planning: e.target.value })}
+          />
         </label>
       </div>
     </form>

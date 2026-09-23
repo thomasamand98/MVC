@@ -414,6 +414,38 @@ model Document {
   @@map("documents")
 }
 
+// Modèle de document imprimable (voir frontend/src/features/documents/,
+// l'éditeur qui produit Contenu_html) : mise en page HTML avec des jetons de
+// fusion ([data-merge-field]) et des blocs répétables ([data-repeat-list])
+// résolus contre les données d'un enregistrement (contrat, facture...) pour
+// produire un PDF — voir backend/src/document-merge/. Type_document
+// distingue les modèles utilisables pour chaque type d'enregistrement (ex.
+// "CONTRAT") ; pas une catégorie d'énumération (liste fermée, connue du
+// code, pas éditable par l'utilisateur) contrairement aux autres "Type_*" de
+// ce schéma.
+model DocumentTemplate {
+  IDDOCUMENT_TEMPLATES        BigInt       @id @default(autoincrement())
+  Nom                         String       @db.VarChar(150)
+  Type_document               String       @db.VarChar(50)
+  Description                 String?      @db.VarChar(500)
+  // En-tête et pied de page : répétés sur chaque page à l'impression (voir
+  // PdfRendererService, headerTemplate/footerTemplate). Contenu_html reste le
+  // corps principal, affiché une fois. Optionnels (String?, pas de défaut) :
+  // un modèle créé avant leur ajout n'en a pas — traités comme vides.
+  Contenu_entete              String?      @db.LongText
+  Contenu_html                String       @db.LongText
+  Contenu_pied                String?      @db.LongText
+  IDUTILISATEURS_createur     BigInt?      @default(0)
+  IDUTILISATEURS_modificateur BigInt?      @default(0)
+  Date_heure_creation         DateTime?    @db.Timestamp(0)
+  Date_heure_modification     DateTime?    @db.Timestamp(0)
+  Createur                    Utilisateur? @relation("DocumentTemplateCreateur", fields: [IDUTILISATEURS_createur], references: [IDUTILISATEURS])
+  Modificateur                Utilisateur? @relation("DocumentTemplateModificateur", fields: [IDUTILISATEURS_modificateur], references: [IDUTILISATEURS])
+
+  @@index([Type_document], map: "WDIDX_DOCUMENT_TEMPLATES_Type_document")
+  @@map("document_templates")
+}
+
 model DocumentVersion {
   IDDOCUMENTS_VERSION         BigInt       @id @default(autoincrement())
   IDDOCUMENTS                 Bytes?       @default(dbgenerated("(unhex(_utf8mb4'0000000000000000000000000000000000000000000000000000000000000000'))")) @db.Binary(32)
@@ -1452,6 +1484,8 @@ model Utilisateur {
   DechetCreateur                        Dechet[]                    @relation("DechetCreateur")
   DocumentCreateur                      Document[]                  @relation("DocumentCreateur")
   DocumentModificateur                  Document[]                  @relation("DocumentModificateur")
+  DocumentTemplateCreateur              DocumentTemplate[]          @relation("DocumentTemplateCreateur")
+  DocumentTemplateModificateur          DocumentTemplate[]          @relation("DocumentTemplateModificateur")
   DocumentVersionCreateur               DocumentVersion[]           @relation("DocumentVersionCreateur")
   DocumentVersionModificateur           DocumentVersion[]           @relation("DocumentVersionModificateur")
   EnumerationCreateur                   Enumeration[]               @relation("EnumerationCreateur")
@@ -1573,4 +1607,3 @@ model Ville {
   @@index([IDPAYS], map: "WDIDX_VILLES_IDPAYS")
   @@map("villes")
 }
-

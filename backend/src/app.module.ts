@@ -4,6 +4,7 @@
 // Pour ajouter une nouvelle fonctionnalité, on créerait un nouveau module
 // et on l'ajouterait dans le tableau `imports` ci-dessous.
 import { Module } from '@nestjs/common';
+import { APP_FILTER } from '@nestjs/core';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { SocieteModule } from './societe/societe.module.js';
 import { ClientModule } from './client/client.module.js';
@@ -23,9 +24,18 @@ import { PointageModule } from './pointage/pointage.module.js';
 import { EntiteModule } from './entite/entite.module.js';
 import { VilleModule } from './ville/ville.module.js';
 import { PaysModule } from './pays/pays.module.js';
+import { CategorieEnumerationModule } from './categorie-enumeration/categorie-enumeration.module.js';
+import { EnumerationModule } from './enumeration/enumeration.module.js';
+import { ConditionCmrModule } from './condition-cmr/condition-cmr.module.js';
+import { TypeFactureModule } from './type-facture/type-facture.module.js';
+import { DocumentTemplateModule } from './document-template/document-template.module.js';
+import { DocumentMergeModule } from './document-merge/document-merge.module.js';
+import { AuthModule } from './auth/auth.module.js';
+import { AllExceptionsFilter } from './common/all-exceptions.filter.js';
 
 @Module({
   imports: [
+    AuthModule,
     PrismaModule,
     SocieteModule,
     ClientModule,
@@ -45,6 +55,13 @@ import { PaysModule } from './pays/pays.module.js';
     EntiteModule,
     VilleModule,
     PaysModule,
+    CategorieEnumerationModule,
+    EnumerationModule,
+    ConditionCmrModule,
+    TypeFactureModule,
+    DocumentTemplateModule,
+    DocumentMergeModule,
   ],
+  providers: [{ provide: APP_FILTER, useClass: AllExceptionsFilter }],
 })
 export class AppModule {}

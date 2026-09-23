@@ -28,6 +28,8 @@ import { CommandesPage } from '../features/commandes/CommandesPage.js'
 import { PersonnelPage } from '../features/personnel/PersonnelPage.js'
 import { PointagePage } from '../features/pointage/PointagePage.js'
 import { EntitePage } from '../features/entite/EntitePage.js'
+import { EnumerationsPage } from '../features/enumerations/EnumerationsPage.js'
+import { DocumentTemplatesPage } from '../features/documents/DocumentTemplatesPage.js'
 
 type MenuLeafConfig = { id: string; label: string; icon?: ReactNode; render: () => ReactElement }
 type MenuGroupConfig = { id: string; label: string; icon?: ReactNode; items: MenuLeafConfig[] }
@@ -82,7 +84,7 @@ const MENU: (MenuLeafConfig | MenuGroupConfig)[] = [
       { id: 'pointage', label: 'Pointage', render: () => <PointagePage /> },
     ]
   },
-  { id: 'documentaire', label: 'Gestion documentaire', icon: <DocumentaireIcon />, render: () => <Dev /> },
+  { id: 'documentaire', label: 'Gestion documentaire', icon: <DocumentaireIcon />, render: () => <DocumentTemplatesPage /> },
   {
     id: 'configuration',
     label: 'Configuration',
@@ -92,7 +94,7 @@ const MENU: (MenuLeafConfig | MenuGroupConfig)[] = [
       { id: 'societe', label: 'Société', render: () => <EntitePage /> },
       { id: 'bdd', label: 'Base de données', render: () => <Dev /> },
       { id: 'comptabilite', label: 'Comptabilité', render: () => <Dev /> },
-      { id: 'enumerations', label: 'Enumérations', render: () => <Dev /> },
+      { id: 'enumerations', label: 'Enumérations', render: () => <EnumerationsPage /> },
       { id: 'outils', label: 'Outils', render: () => <Dev /> },
       { id: 'donnees', label: 'Données brutes', render: () => <Dev /> },
       { id: 'import-export', label: 'Import/Export', render: () => <Dev /> },

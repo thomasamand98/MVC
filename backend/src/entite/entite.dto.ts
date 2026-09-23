@@ -30,4 +30,10 @@ export type UpdateEntiteDto = {
   Localite?: string;
   Pays?: string;
   Pays_full_name?: string;
+  // Logo (voir EntiteForm.tsx, glisser-déposer) : data URI base64
+  // ("data:image/png;base64,...") envoyée telle quelle par le navigateur
+  // (FileReader.readAsDataURL) — convertie en Buffer côté service. Chaîne
+  // vide = supprime le logo (contrairement aux champs mot de passe, qui
+  // eux restent inchangés si vides).
+  Logo?: string;
 };

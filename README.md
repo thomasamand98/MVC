@@ -54,3 +54,9 @@ npm run dev
 ```
 
 → App disponible sur http://localhost:5173
+
+
+## Documentation
+
+- [Journal des modifications](docs/modifications.md) — ce qui a été ajouté ou modifié (énumérations, fiche contrat, PDF, sécurité).
+- [Sécurité et authentification](docs/securite-authentification.md) — JWT, rate limit, CORS, helmet, déploiement, et comment remplacer la connexion factice.

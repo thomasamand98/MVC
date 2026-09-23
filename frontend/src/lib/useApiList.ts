@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { API_URL } from './config'
+import { apiJson } from './api'
 
 export type ApiListPagination = { page: number; pageSize: number }
 
@@ -27,11 +27,7 @@ export function useApiList<T>(endpoint: string, pagination?: ApiListPagination) 
     setLoading(true)
     setError(null)
     const query = pagination ? `?page=${pagination.page}&pageSize=${pagination.pageSize}` : ''
-    return fetch(`${API_URL}/${endpoint}${query}`)
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        return res.json() as Promise<Record<string, T[]> & { total?: number }>
-      })
+    return apiJson<Record<string, T[]> & { total?: number }>(`${endpoint}${query}`)
       .then((json) => {
         setData(json[endpoint])
         setTotal(json.total ?? json[endpoint].length)

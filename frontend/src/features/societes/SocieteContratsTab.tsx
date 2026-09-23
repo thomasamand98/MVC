@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { API_URL } from '../../lib/config.js'
+import { apiJson } from '../../lib/api.js'
 
 type ContratRow = {
   IDCONTRATS: string
@@ -13,8 +13,6 @@ type Props = {
   societeId: string
 }
 
-const apiUrl = (path: string) => `${API_URL}/${path}`
-
 function toDateLabel(value: string | null): string {
   return value ? value.slice(0, 10) : '—'
 }
@@ -27,8 +25,7 @@ export function SocieteContratsTab({ societeId }: Props) {
 
   useEffect(() => {
     setContrats(null)
-    fetch(apiUrl(`contrats?societeId=${encodeURIComponent(societeId)}`))
-      .then((res) => res.json() as Promise<{ contrats: ContratRow[] }>)
+    apiJson<{ contrats: ContratRow[] }>(`contrats?societeId=${encodeURIComponent(societeId)}`)
       .then((json) => setContrats(json.contrats))
       .catch(() => setContrats([]))
   }, [societeId])

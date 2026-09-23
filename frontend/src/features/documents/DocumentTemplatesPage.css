@@ -1,0 +1,211 @@
+.dtp-editor-page {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.dtp-editor-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.dtp-name-input {
+  flex: 1;
+  min-width: 0;
+  max-width: 22rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text-h);
+  padding: 0.45rem 0.6rem;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.dtp-name-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
+
+.dtp-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: center;
+  padding: 3rem 1.5rem;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  color: var(--text);
+}
+
+.dtp-empty svg {
+  font-size: 2.5rem;
+  color: var(--text);
+}
+
+.dtp-empty p {
+  max-width: 28rem;
+}
+
+.dtp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 1rem;
+}
+
+.dtp-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+  cursor: pointer;
+}
+
+.dtp-card:hover {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+}
+
+.dtp-card-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 4.5rem;
+  border-radius: 8px;
+  background: var(--code-bg);
+  color: var(--text);
+  font-size: 1.8rem;
+}
+
+.dtp-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.dtp-card-name {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 700;
+  color: var(--text-h);
+  overflow-wrap: anywhere;
+}
+
+.dtp-type-badge {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: var(--code-bg);
+  color: var(--text);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.dtp-card-date {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text);
+}
+
+.dtp-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: auto;
+}
+
+.dtp-button {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text-h);
+  padding: 0.5rem 0.9rem;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dtp-button:hover {
+  background: var(--code-bg);
+}
+
+.dtp-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  flex-shrink: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.dtp-button + .dtp-icon-button {
+  margin-left: auto;
+}
+
+.dtp-icon-button:hover {
+  background: var(--code-bg);
+}
+
+.dtp-icon-button.danger:hover {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+/* ---------- Modale de création ---------- */
+
+.dtp-create-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  min-width: 18rem;
+}
+
+.dtp-create-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.dtp-create-field input,
+.dtp-create-field select {
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text-h);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+.dtp-create-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
