@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import type { ConditionCmr, ContratDetail } from './useContrats.js'
 import type { Societe, SocieteDetail } from '../societes/useSocietes.js'
 import type { TypeFacture } from './useTypesFacture.js'
@@ -48,6 +48,9 @@ type Props = {
   // Modèles de document de type "CONTRAT", pour le bouton « Voir le PDF »
   // (voir ContratPdfButton.tsx) — même principe que societes/typesFacture.
   documentTemplates: DocumentTemplateSummary[]
+  // Société présélectionnée en création (onglet Contrats de la fiche
+  // Société, voir SocieteContratsTab.tsx) — ignorée en modification.
+  defaultSocieteId?: string
   onSubmit: (dto: ContratDto) => Promise<void>
   onCancel: () => void
 }
@@ -80,7 +83,7 @@ function fullNumero(contrat: ContratDetail): string {
 // voir useContrats.ts) chargée par CrudPage avant l'ouverture. Les onglets
 // Prestations/Factures et les conditions CMR se rattachent à un contrat
 // existant — désactivés tant qu'il n'est pas créé.
-export function ContratForm({ initial, societes, typesFacture, documentTemplates, onSubmit, onCancel }: Props) {
+export function ContratForm({ initial, societes, typesFacture, documentTemplates, defaultSocieteId, onSubmit, onCancel }: Props) {
   const [tab, setTab] = useState<TabId>('detail')
   const [form, setForm] = useState<ContratDto>({
     Num_contrat: initial?.Num_contrat ?? '',
@@ -91,7 +94,7 @@ export function ContratForm({ initial, societes, typesFacture, documentTemplates
     IDTYPES_FACTURE: initial?.IDTYPES_FACTURE ?? '',
     Description_projet: initial?.Description_projet ?? '',
     Note_confidentielle: initial?.Note_confidentielle ?? '',
-    IDSOCIETES: initial?.IDSOCIETES ?? '',
+    IDSOCIETES: initial ? (initial.IDSOCIETES ?? '') : (defaultSocieteId ?? ''),
     Reference_client: initial?.Reference_client ?? '',
     Taux_tva: initial?.Taux_tva ?? '',
     Commissionnaire: initial?.Commissionnaire ?? '',
@@ -127,6 +130,14 @@ export function ContratForm({ initial, societes, typesFacture, documentTemplates
       if (request === societeRequest.current) setClient(null)
     }
   }
+
+  // Société présélectionnée en création : charge son numéro client et son
+  // taux de TVA, exactement comme un choix manuel dans le sélecteur.
+  useEffect(() => {
+    if (!initial && defaultSocieteId) void handleSocieteChange(defaultSocieteId)
+    // Une seule fois à l'ouverture de la fiche.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   function handleArchiveChange(checked: boolean) {
     setForm((prev) => ({
@@ -180,6 +191,13 @@ export function ContratForm({ initial, societes, typesFacture, documentTemplates
 
       {tab === 'detail' && (
         <form onSubmit={handleSubmit} className="contrat-detail">
+          <div className="contrat-actions">
+            <button type="button" className="page-actions-button secondary" onClick={onCancel}>Annuler</button>
+            <button type="submit" className="page-actions-button primary" disabled={submitting}>
+              {submitting ? 'Enregistrement...' : 'Enregistrer'}
+            </button>
+          </div>
+
           <div className="contrat-columns">
             <div className="contrat-column">
               <section className="contrat-card">
@@ -299,13 +317,6 @@ export function ContratForm({ initial, societes, typesFacture, documentTemplates
                 </div>
               </section>
             </div>
-          </div>
-
-          <div className="contrat-actions">
-            <button type="button" className="contrat-button" onClick={onCancel}>Annuler</button>
-            <button type="submit" className="page-actions-button primary" disabled={submitting}>
-              {submitting ? 'Enregistrement...' : 'Enregistrer'}
-            </button>
           </div>
         </form>
       )}

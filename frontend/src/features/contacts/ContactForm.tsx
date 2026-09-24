@@ -1,5 +1,7 @@
 import { useState, type FormEvent } from 'react'
+import '../../components/PageActions.css'
 import type { ContactDetail } from './useContacts.js'
+import type { Societe } from '../societes/useSocietes.js'
 
 // Champs scripturables d'un contact, mêmes clés que le CreateContactDto
 // côté backend (backend/src/contact/contact.dto.ts). Personne_physique/
@@ -18,10 +20,22 @@ export type ContactDto = {
   Adresse_entreprise: number
   description_telephone: string
   IDADRESSES: string
+  // Société principale (liste « Société ») et fonction/service dans cette
+  // société — lien SocieteContacts géré par le backend (createContact/
+  // updateContact). Vide : aucune société principale.
+  IDSOCIETES: string
+  Fonction_contact: string
+  Service_bureau: string
 }
 
 type Props = {
   initial: ContactDetail | null
+  // Sociétés pour la liste « Société » — chargées par la page et passées en
+  // prop (même principe que ContratForm).
+  societes: Societe[]
+  // Société présélectionnée en création (onglet Contacts de la fiche
+  // Société, voir SocieteContactsTab.tsx) — ignorée en modification.
+  defaultSocieteId?: string
   onSubmit: (dto: ContactDto) => Promise<void>
   onCancel: () => void
 }
@@ -33,7 +47,8 @@ const inputStyle = { padding: '0.4rem 0.5rem', border: '1px solid var(--border)'
 // ContactsPage.tsx). `initial` vaut null en création, sinon la fiche
 // complète du contact (GET /contacts/:id, voir useContacts.ts) chargée par
 // CrudPage avant l'ouverture de la modale.
-export function ContactForm({ initial, onSubmit, onCancel }: Props) {
+export function ContactForm({ initial, societes, defaultSocieteId, onSubmit, onCancel }: Props) {
+  const [principal, ...autresSocietes] = initial?.SocieteContacts ?? []
   const [form, setForm] = useState<ContactDto>({
     Civilite: initial?.Civilite ?? '',
     Nom_contact: initial?.Nom_contact ?? '',
@@ -47,6 +62,9 @@ export function ContactForm({ initial, onSubmit, onCancel }: Props) {
     Adresse_entreprise: initial?.Adresse_entreprise ?? 0,
     description_telephone: initial?.description_telephone ?? '',
     IDADRESSES: initial?.IDADRESSES ?? '',
+    IDSOCIETES: initial ? (principal?.IDSOCIETES ?? '') : (defaultSocieteId ?? ''),
+    Fonction_contact: principal?.Fonction_contact ?? '',
+    Service_bureau: principal?.Service_bureau ?? '',
   })
   const [submitting, setSubmitting] = useState(false)
 
@@ -62,6 +80,31 @@ export function ContactForm({ initial, onSubmit, onCancel }: Props) {
 
   return (
     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginBottom: '0.5rem' }}>
+        <button type="button" className="page-actions-button secondary" onClick={onCancel}>Annuler</button>
+        <button type="submit" className="page-actions-button primary" disabled={submitting}>{submitting ? 'Enregistrement...' : 'Enregistrer'}</button>
+      </div>
+      <label style={fieldStyle}>
+        Société
+        <select style={inputStyle} value={form.IDSOCIETES} onChange={(e) => setForm({ ...form, IDSOCIETES: e.target.value })}>
+          <option value="">—</option>
+          {societes.map((s) => (
+            <option key={s.IDSOCIETES} value={s.IDSOCIETES}>{s.Nom_societe}</option>
+          ))}
+        </select>
+      </label>
+      {form.IDSOCIETES && (
+        <>
+          <label style={fieldStyle}>
+            Fonction
+            <input style={inputStyle} value={form.Fonction_contact} onChange={(e) => setForm({ ...form, Fonction_contact: e.target.value })} />
+          </label>
+          <label style={fieldStyle}>
+            Service / Bureau
+            <input style={inputStyle} value={form.Service_bureau} onChange={(e) => setForm({ ...form, Service_bureau: e.target.value })} />
+          </label>
+        </>
+      )}
       <label style={fieldStyle}>
         Civilité
         <input style={inputStyle} value={form.Civilite} onChange={(e) => setForm({ ...form, Civilite: e.target.value })} />
@@ -138,11 +181,11 @@ export function ContactForm({ initial, onSubmit, onCancel }: Props) {
           onChange={(e) => setForm({ ...form, Remarque: e.target.value })}
         />
       </label>
-      {initial && initial.SocieteContacts.length > 0 && (
+      {autresSocietes.length > 0 && (
         <div style={fieldStyle}>
-          <span>Sociétés liées</span>
+          <span>Autres sociétés liées</span>
           <ul style={{ margin: 0, paddingLeft: '1.2rem' }}>
-            {initial.SocieteContacts.map((sc, i) => (
+            {autresSocietes.map((sc, i) => (
               <li key={i}>
                 {sc.Societe?.Nom_societe ?? '—'}
                 {sc.Fonction_contact ? ` (${sc.Fonction_contact})` : ''}
@@ -164,10 +207,6 @@ export function ContactForm({ initial, onSubmit, onCancel }: Props) {
           </ul>
         </div>
       )}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.5rem' }}>
-        <button type="button" onClick={onCancel}>Annuler</button>
-        <button type="submit" disabled={submitting}>{submitting ? 'Enregistrement...' : 'Enregistrer'}</button>
-      </div>
     </form>
   )
 }

@@ -1,4 +1,4 @@
-import { Fragment, useState, type ReactNode } from 'react'
+import { Fragment, useState, type MouseEvent, type ReactNode } from 'react'
 import { useTable, type ColumnDef, type RowData } from '@tanstack/react-table'
 import * as XLSX from 'xlsx'
 import { features } from '../lib/tableFeatures.js'
@@ -8,13 +8,16 @@ type Props<T extends RowData> = {
   data: T[]
   columns: ColumnDef<typeof features, T>[]
   // Identifiant unique de chaque ligne (ex. `(s) => s.IDSOCIETES`) — permet
-  // de savoir laquelle est sélectionnée. Requis dès que `onRowClick` est
-  // fourni.
+  // de savoir lesquelles sont sélectionnées. Requis dès que
+  // `onSelectionChange` est fourni.
   getRowId?: (row: T) => string
-  selectedRowId?: string | null
-  // Simple clic : sélectionne la ligne (surbrillance, active le bouton
-  // Supprimer) sans rien ouvrir.
-  onRowClick?: (row: T) => void
+  // Multisélection — fournir les deux active la colonne de cases à cocher.
+  // Simple clic : sélectionne uniquement cette ligne, sans rien ouvrir.
+  // Ctrl/Cmd+clic ou case à cocher : ajoute/retire la ligne. Maj+clic :
+  // sélectionne la plage depuis la dernière ligne cliquée, dans l'ordre
+  // affiché (donc après tri et filtres).
+  selectedRowIds?: ReadonlySet<string>
+  onSelectionChange?: (ids: Set<string>) => void
   // Double clic : ouvre la modale de modification (voir <Entite>Page.tsx
   // sous src/features/) — un simple clic ne l'ouvre plus, pour laisser le
   // simple clic sélectionner la ligne sans interrompre la lecture du
@@ -23,6 +26,9 @@ type Props<T extends RowData> = {
   // Nom du fichier généré par le bouton Exporter (sans l'extension .xlsx)
   // — voir CrudPage.tsx, qui y passe le titre de la page.
   exportFileName?: string
+  // Contenu placé à gauche du bouton Exporter (ex. le champ Rechercher de
+  // CrudPage.tsx).
+  toolbarStart?: ReactNode
   // Id de la ligne actuellement "dépliée" — une ligne supplémentaire
   // s'insère juste en dessous avec le contenu de `renderExpandedRow` (voir
   // RowExpandMode.tsx, sous components/view-modes/). Absent/null : aucune
@@ -61,12 +67,56 @@ function ExcelIcon() {
 // chaque ligne bascule en carte empilée label/valeur — au-dessus, le
 // tableau garde ses colonnes et défile horizontalement plutôt que de
 // les compresser.
-export function DataTable<T extends RowData>({ data, columns, getRowId, selectedRowId, onRowClick, onRowDoubleClick, exportFileName, expandedRowId, renderExpandedRow }: Props<T>) {
+export function DataTable<T extends RowData>({ data, columns, getRowId, selectedRowIds, onSelectionChange, onRowDoubleClick, exportFileName, toolbarStart, expandedRowId, renderExpandedRow }: Props<T>) {
   // Id de la colonne dont le champ de filtre est actuellement ouvert
   // (une seule à la fois), ou null si aucune.
   const [openFilterId, setOpenFilterId] = useState<string | null>(null)
+  // Dernière ligne cliquée sans Maj — point de départ du Maj+clic.
+  const [anchorId, setAnchorId] = useState<string | null>(null)
 
   const table = useTable({ features, columns, data })
+
+  const selectable = Boolean(getRowId && selectedRowIds && onSelectionChange)
+  const selection = selectedRowIds ?? new Set<string>()
+  const visibleIds = getRowId ? table.getRowModel().rows.map((row) => getRowId(row.original)) : []
+  const selectedVisibleCount = visibleIds.filter((id) => selection.has(id)).length
+  const allVisibleSelected = visibleIds.length > 0 && selectedVisibleCount === visibleIds.length
+
+  function toggleRow(id: string) {
+    const next = new Set(selection)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    setAnchorId(id)
+    onSelectionChange?.(next)
+  }
+
+  function handleRowClick(event: MouseEvent, id: string) {
+    if (!selectable) return
+    if (event.shiftKey && anchorId && visibleIds.includes(anchorId)) {
+      const [from, to] = [visibleIds.indexOf(anchorId), visibleIds.indexOf(id)].sort((a, b) => a - b)
+      const range = visibleIds.slice(from, to + 1)
+      // Maj+Ctrl ajoute la plage à la sélection existante, Maj seul la remplace.
+      onSelectionChange?.(new Set(event.ctrlKey || event.metaKey ? [...selection, ...range] : range))
+      return
+    }
+    if (event.ctrlKey || event.metaKey) {
+      toggleRow(id)
+      return
+    }
+    setAnchorId(id)
+    onSelectionChange?.(new Set([id]))
+  }
+
+  // Case d'en-tête : coche/décoche toutes les lignes affichées (après
+  // filtres), sans toucher aux lignes sélectionnées masquées par un filtre.
+  function toggleAllVisible() {
+    const next = new Set(selection)
+    for (const id of visibleIds) {
+      if (allVisibleSelected) next.delete(id)
+      else next.add(id)
+    }
+    onSelectionChange?.(next)
+  }
 
   // Exporte les lignes telles qu'affichées (triées/filtrées) plutôt que
   // `data` brute, en réutilisant les libellés de colonne déjà utilisés pour
@@ -90,6 +140,7 @@ export function DataTable<T extends RowData>({ data, columns, getRowId, selected
   return (
     <div className="data-table">
       <div className="data-table-toolbar">
+        {toolbarStart}
         <button type="button" className="data-table-export-button" onClick={handleExportExcel}>
           <ExcelIcon />
           Exporter
@@ -99,6 +150,20 @@ export function DataTable<T extends RowData>({ data, columns, getRowId, selected
         <thead>
           {table.getHeaderGroups().map((group) => (
             <tr key={group.id}>
+              {selectable && (
+                <th className="data-table-select-cell">
+                  <input
+                    type="checkbox"
+                    checked={allVisibleSelected}
+                    ref={(el) => {
+                      if (el) el.indeterminate = selectedVisibleCount > 0 && !allVisibleSelected
+                    }}
+                    onChange={toggleAllVisible}
+                    disabled={visibleIds.length === 0}
+                    aria-label="Tout sélectionner"
+                  />
+                </th>
+              )}
               {group.headers.map((header) => {
                 const sorted = header.column.getIsSorted()
                 const isFilterOpen = openFilterId === header.column.id
@@ -141,17 +206,26 @@ export function DataTable<T extends RowData>({ data, columns, getRowId, selected
         <tbody>
           {table.getRowModel().rows.map((row) => {
             const id = getRowId?.(row.original)
-            const isSelected = id !== undefined && id === selectedRowId
-            const isClickable = Boolean(onRowClick || onRowDoubleClick)
+            const isSelected = id !== undefined && selection.has(id)
+            const isClickable = selectable || Boolean(onRowDoubleClick)
             const cells = row.getAllCells()
             const isExpanded = id !== undefined && id === expandedRowId
             return (
               <Fragment key={row.id}>
                 <tr
                   className={`data-table-row${isClickable ? ' clickable' : ''}${isSelected ? ' selected' : ''}`}
-                  onClick={() => onRowClick?.(row.original)}
+                  // Empêche le navigateur de surligner le texte au Maj+clic.
+                  onMouseDown={(e) => {
+                    if (e.shiftKey && selectable) e.preventDefault()
+                  }}
+                  onClick={(e) => id !== undefined && handleRowClick(e, id)}
                   onDoubleClick={() => onRowDoubleClick?.(row.original)}
                 >
+                  {selectable && id !== undefined && (
+                    <td className="data-table-select-cell" onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
+                      <input type="checkbox" checked={isSelected} onChange={() => toggleRow(id)} aria-label="Sélectionner la ligne" />
+                    </td>
+                  )}
                   {cells.map((cell) => {
                     const header = cell.column.columnDef.header
                     const label = typeof header === 'string' ? header : cell.column.id
@@ -164,12 +238,17 @@ export function DataTable<T extends RowData>({ data, columns, getRowId, selected
                 </tr>
                 {isExpanded && renderExpandedRow && (
                   <tr className="data-table-expanded-row">
-                    <td colSpan={cells.length}>{renderExpandedRow()}</td>
+                    <td colSpan={cells.length + (selectable ? 1 : 0)}>{renderExpandedRow()}</td>
                   </tr>
                 )}
               </Fragment>
             )
           })}
+          {table.getRowModel().rows.length === 0 && (
+            <tr className="data-table-empty-row">
+              <td colSpan={columns.length + (selectable ? 1 : 0)}>Aucun résultat</td>
+            </tr>
+          )}
         </tbody>
       </table>
     </div>

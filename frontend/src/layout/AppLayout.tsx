@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactElement, type ReactNode } from '
 import { Sidebar, type MenuNode } from './Sidebar.js'
 import { TabBar } from './TabBar.js'
 import { TabsContext, type OpenTabRequest } from './TabsContext.js'
+import { ProjectionProvider } from '../components/projection/ProjectionProvider.js'
 import './AppLayout.css'
 import {
   DashboardIcon,
@@ -30,6 +31,7 @@ import { PointagePage } from '../features/pointage/PointagePage.js'
 import { EntitePage } from '../features/entite/EntitePage.js'
 import { EnumerationsPage } from '../features/enumerations/EnumerationsPage.js'
 import { DocumentTemplatesPage } from '../features/documents/DocumentTemplatesPage.js'
+import { OcrPage } from '../features/ocr/OcrPage.js'
 
 type MenuLeafConfig = { id: string; label: string; icon?: ReactNode; render: () => ReactElement }
 type MenuGroupConfig = { id: string; label: string; icon?: ReactNode; items: MenuLeafConfig[] }
@@ -96,6 +98,7 @@ const MENU: (MenuLeafConfig | MenuGroupConfig)[] = [
       { id: 'comptabilite', label: 'Comptabilité', render: () => <Dev /> },
       { id: 'enumerations', label: 'Enumérations', render: () => <EnumerationsPage /> },
       { id: 'outils', label: 'Outils', render: () => <Dev /> },
+      { id: 'ocr', label: 'Test OCR', render: () => <OcrPage /> },
       { id: 'donnees', label: 'Données brutes', render: () => <Dev /> },
       { id: 'import-export', label: 'Import/Export', render: () => <Dev /> },
     ]
@@ -232,34 +235,36 @@ export function AppLayout() {
 
   return (
     <TabsContext.Provider value={{ openOrActivateTab, closeTab: handleCloseTab }}>
-      <div className="app-layout">
-        <button
-          type="button"
-          className="app-layout-menu-toggle"
-          onClick={() => setMobileOpen((prev) => !prev)}
-          aria-label={mobileOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
-          aria-expanded={mobileOpen}
-        >
-          {mobileOpen ? <CloseIcon /> : <MenuIcon />}
-        </button>
-        <Sidebar
-          nodes={MENU_NODES}
-          activeId={activeId}
-          onSelect={handleSelect}
-          open={mobileOpen}
-          onClose={() => setMobileOpen(false)}
-        />
-        <div className="app-content">
-          <TabBar tabs={openTabs} activeId={activeId} onSelect={setActiveId} onClose={handleCloseTab} onReorder={handleReorderTabs} />
-          <div className="app-content-page">
-            {openTabIds.map((id) => (
-              <div key={id} hidden={id !== activeId}>
-                {getTabContent(id)}
-              </div>
-            ))}
+      <ProjectionProvider>
+        <div className="app-layout">
+          <button
+            type="button"
+            className="app-layout-menu-toggle"
+            onClick={() => setMobileOpen((prev) => !prev)}
+            aria-label={mobileOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+            aria-expanded={mobileOpen}
+          >
+            {mobileOpen ? <CloseIcon /> : <MenuIcon />}
+          </button>
+          <Sidebar
+            nodes={MENU_NODES}
+            activeId={activeId}
+            onSelect={handleSelect}
+            open={mobileOpen}
+            onClose={() => setMobileOpen(false)}
+          />
+          <div className="app-content">
+            <TabBar tabs={openTabs} activeId={activeId} onSelect={setActiveId} onClose={handleCloseTab} onReorder={handleReorderTabs} />
+            <div className="app-content-page">
+              {openTabIds.map((id) => (
+                <div key={id} hidden={id !== activeId}>
+                  {getTabContent(id)}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      </ProjectionProvider>
     </TabsContext.Provider>
   )
 }

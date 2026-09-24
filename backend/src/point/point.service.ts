@@ -4,6 +4,8 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { buildSearchWhere } from '../common/search.js';
+import { andWhere, projectionWhere, type Projection, type ProjectionMap } from '../common/projection.js';
 import { serializeBigInt } from '../prisma/serialize-bigint.js';
 import { CreatePointDto, UpdatePointDto } from './point.dto.js';
 
@@ -36,6 +38,13 @@ export const pointDetailSelect = {
   },
 } satisfies Prisma.PointSelect;
 
+// Projection (voir common/projection.ts) : pour chaque table source, les
+// lignes de cette table liées aux ids sélectionnés.
+const pointProjections: ProjectionMap<Prisma.PointWhereInput> = {
+  societes: (ids) => ({ IDSOCIETES: { in: ids } }),
+  contacts: (ids) => ({ PointContacts: { some: { IDCONTACTS: { in: ids } } } }),
+};
+
 @Injectable()
 export class PointService {
   constructor(private readonly prisma: PrismaService) {}
@@ -44,15 +53,25 @@ export class PointService {
   // table). Fournis, la requête est découpée avec skip/take et `total`
   // (nombre total de lignes, pas juste celles de la page) est renvoyé à
   // côté pour que le frontend puisse calculer le nombre de pages.
-  async getPoints(page?: number, pageSize?: number) {
+  async getPoints(page?: number, pageSize?: number, search?: string, projection?: Projection) {
     const paginate = page !== undefined && pageSize !== undefined && pageSize > 0;
+    const filterWhere = buildSearchWhere<Prisma.PointWhereInput>(search, (c) => [
+      { Libelle: c },
+      { Nom_societe: c },
+      { Telephone: c },
+      { Adresse: { Adresse1: c } },
+      { Adresse: { CP: c } },
+      { Adresse: { Localite: c } },
+    ]);
+    const where = andWhere<Prisma.PointWhereInput>(filterWhere, projectionWhere(pointProjections, projection));
     const [points, total] = await Promise.all([
       this.prisma.point.findMany({
+        where,
         orderBy: { IDPOINTS: 'asc' },
         select: pointSelect,
         ...(paginate ? { skip: (page - 1) * pageSize, take: pageSize } : {}),
       }),
-      this.prisma.point.count(),
+      this.prisma.point.count({ where }),
     ]);
     return { points: serializeBigInt(points), total };
   }

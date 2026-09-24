@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import '../../components/PageActions.css'
 import type { Condition } from './useConditions.js'
 
 // Champs scripturables d'une condition d'exécution, mêmes clés que le
@@ -43,6 +44,10 @@ export function ConditionForm({ initial, onSubmit, onCancel }: Props) {
 
   return (
     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginBottom: '0.5rem' }}>
+        <button type="button" className="page-actions-button secondary" onClick={onCancel}>Annuler</button>
+        <button type="submit" className="page-actions-button primary" disabled={submitting}>{submitting ? 'Enregistrement...' : 'Enregistrer'}</button>
+      </div>
       <label style={fieldStyle}>
         Libellé
         <input style={inputStyle} value={form.Libelle} onChange={(e) => setForm({ ...form, Libelle: e.target.value })} />
@@ -67,10 +72,6 @@ export function ConditionForm({ initial, onSubmit, onCancel }: Props) {
           <option value={1}>Oui</option>
         </select>
       </label>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.5rem' }}>
-        <button type="button" onClick={onCancel}>Annuler</button>
-        <button type="submit" disabled={submitting}>{submitting ? 'Enregistrement...' : 'Enregistrer'}</button>
-      </div>
     </form>
   )
 }

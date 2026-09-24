@@ -41,6 +41,15 @@ export function DocumentTemplateEditor({ initial, onSave, onCancel, saving }: Pr
   const lastRangeRefs = useRef<Record<ZoneKey, Range | null>>({ header: null, content: null, footer: null })
   const [activeZone, setActiveZone] = useState<ZoneKey>('content')
   const [dirty, setDirty] = useState(false)
+  // Zone actuellement éditée en code HTML brut plutôt qu'en visuel (bouton
+  // </> de la barre d'outils, voir toggleCodeView) — une seule à la fois.
+  // Tant qu'elle est active, le canvas contentEditable correspondant est
+  // masqué (voir le rendu plus bas) et `codeHtml` fait foi pour cette zone :
+  // le canvas n'est réécrit qu'au moment de sortir du mode code (voir
+  // flushCodeZone), pas à chaque frappe dans le textarea.
+  const [codeZone, setCodeZone] = useState<ZoneKey | null>(null)
+  const [codeHtml, setCodeHtml] = useState('')
+  const codeTextareaRef = useRef<HTMLTextAreaElement | null>(null)
 
   // Contenu initial posé une seule fois : au-delà, c'est le DOM lui-même qui
   // fait foi (voir handleSave). Si le modèle change (nouvel id), le parent
@@ -79,6 +88,30 @@ export function DocumentTemplateEditor({ initial, onSave, onCancel, saving }: Pr
     setDirty(true)
   }
 
+  // Réécrit le canvas de la zone en cours d'édition « code » avec le contenu
+  // du textarea, puis sort du mode code — sans effet si aucune zone n'y est
+  // (voir handleSave/handleReset, qui l'appellent avant de lire les canvas).
+  function flushCodeZone() {
+    if (!codeZone) return
+    const canvas = canvasRefs.current[codeZone]
+    if (canvas) canvas.innerHTML = codeHtml
+    setCodeZone(null)
+  }
+
+  function toggleCodeView() {
+    if (codeZone === activeZone) {
+      flushCodeZone()
+      markDirty()
+      return
+    }
+    // Une autre zone était en mode code : la refermer d'abord (son propre
+    // textarea ne serait sinon plus affiché ni modifiable une fois qu'on
+    // aurait quitté cette zone).
+    flushCodeZone()
+    setCodeHtml(canvasRefs.current[activeZone]?.innerHTML ?? '')
+    setCodeZone(activeZone)
+  }
+
   function currentRange(zone: ZoneKey): Range {
     const canvas = canvasRefs.current[zone]!
     const stored = lastRangeRefs.current[zone]
@@ -96,7 +129,31 @@ export function DocumentTemplateEditor({ initial, onSave, onCancel, saving }: Pr
     markDirty()
   }
 
+  // Insère du HTML dans le textarea de code source de la zone active, à la
+  // position du curseur (voir handleCodeDrop pour le glisser-déposer, qui
+  // partage cette logique) — utilisé par insertField/insertGroup quand la
+  // palette est utilisée pendant que cette zone est en mode code, pour ne pas
+  // écrire silencieusement dans le canvas caché (qui serait de toute façon
+  // écrasé par le contenu du textarea à la sortie du mode code, voir
+  // flushCodeZone).
+  function insertHtmlIntoCode(html: string) {
+    const textarea = codeTextareaRef.current
+    const start = textarea?.selectionStart ?? codeHtml.length
+    const end = textarea?.selectionEnd ?? codeHtml.length
+    setCodeHtml(codeHtml.slice(0, start) + html + codeHtml.slice(end))
+    markDirty()
+    const caret = start + html.length
+    requestAnimationFrame(() => {
+      textarea?.focus()
+      textarea?.setSelectionRange(caret, caret)
+    })
+  }
+
   function insertField(field: MergeField) {
+    if (activeZone === codeZone) {
+      insertHtmlIntoCode(createChipElement(field).outerHTML)
+      return
+    }
     const canvas = canvasRefs.current[activeZone]
     if (!canvas) return
     canvas.focus()
@@ -105,10 +162,14 @@ export function DocumentTemplateEditor({ initial, onSave, onCancel, saving }: Pr
   }
 
   function insertGroup(group: MergeFieldGroup) {
-    const canvas = canvasRefs.current[activeZone]
-    if (!canvas) return
     const node = createRepeatBlockElement(group)
     if (!node) return
+    if (activeZone === codeZone) {
+      insertHtmlIntoCode(node.outerHTML)
+      return
+    }
+    const canvas = canvasRefs.current[activeZone]
+    if (!canvas) return
     canvas.focus()
     insertBlockNode(canvas, node)
     markDirty()
@@ -211,6 +272,34 @@ export function DocumentTemplateEditor({ initial, onSave, onCancel, saving }: Pr
     }
   }
 
+  // Glisser-déposer depuis la palette pendant l'édition du code HTML brut
+  // (voir codeZone) : pas d'équivalent de rangeFromPoint pour un <textarea>
+  // (son contenu n'est pas du DOM adressable par point), donc insertion à la
+  // position du curseur — comme les boutons « + » de la palette pour le
+  // canvas visuel (voir currentRange) — plutôt qu'au pixel exact du dépose.
+  function handleCodeDrop(e: DragEvent<HTMLTextAreaElement>) {
+    const raw = e.dataTransfer.getData(DRAG_MIME)
+    if (!raw) return
+    e.preventDefault()
+
+    let payload: DragPayload
+    try {
+      payload = JSON.parse(raw)
+    } catch {
+      return
+    }
+
+    if (payload.type === 'group') {
+      const group = findGroupById(payload.groupId)
+      const node = group ? createRepeatBlockElement(group) : null
+      if (node) insertHtmlIntoCode(node.outerHTML)
+      return
+    }
+
+    const field = findFieldByPath(payload.path)
+    if (field) insertHtmlIntoCode(createChipElement(field).outerHTML)
+  }
+
   // Suppression d'un jeton/bloc : délégation sur le canvas plutôt qu'un
   // handler par élément inséré en DOM impératif (React n'a pas la main sur
   // ces nœuds) — la même logique s'applique quelle que soit la zone.
@@ -234,6 +323,7 @@ export function DocumentTemplateEditor({ initial, onSave, onCancel, saving }: Pr
   }
 
   function handleSave() {
+    flushCodeZone()
     const content = canvasRefs.current.content
     if (!content) return
     onSave({
@@ -246,6 +336,7 @@ export function DocumentTemplateEditor({ initial, onSave, onCancel, saving }: Pr
 
   function handleReset() {
     if (!window.confirm('Réinitialiser le modèle avec la mise en page de départ ? Les modifications non enregistrées seront perdues.')) return
+    setCodeZone(null)
     if (canvasRefs.current.header) canvasRefs.current.header.innerHTML = initial.headerHtml
     if (canvasRefs.current.content) canvasRefs.current.content.innerHTML = initial.contentHtml
     if (canvasRefs.current.footer) canvasRefs.current.footer.innerHTML = initial.footerHtml
@@ -260,6 +351,8 @@ export function DocumentTemplateEditor({ initial, onSave, onCancel, saving }: Pr
         onInsertPageBreak={insertPageBreak}
         onInsertRepeatGroup={insertRepeatGroupById}
         onInsertPageNumber={activeZone === 'content' ? undefined : insertPageNumber}
+        onToggleCodeView={toggleCodeView}
+        codeViewActive={codeZone === activeZone}
       />
       <div className="dte-body">
         <MergeFieldPalette onInsertField={insertField} onInsertGroup={insertGroup} />
@@ -277,6 +370,10 @@ export function DocumentTemplateEditor({ initial, onSave, onCancel, saving }: Pr
                     canvasRefs.current[key] = el
                   }}
                   className={`dte-zone-canvas dte-zone-canvas-${key}`}
+                  // Masqué plutôt que démonté en mode code (voir codeZone) :
+                  // la ref doit rester valide pour que flushCodeZone puisse y
+                  // réécrire le HTML édité en sortant du mode code.
+                  hidden={codeZone === key}
                   contentEditable
                   suppressContentEditableWarning
                   onDragOver={handleDragOver}
@@ -289,6 +386,22 @@ export function DocumentTemplateEditor({ initial, onSave, onCancel, saving }: Pr
                   // bouge alors pas) — le focus, lui, est toujours fiable.
                   onFocus={() => setActiveZone(key)}
                 />
+                {codeZone === key && (
+                  <textarea
+                    ref={codeTextareaRef}
+                    className="dte-zone-code"
+                    value={codeHtml}
+                    onChange={(e) => {
+                      setCodeHtml(e.target.value)
+                      markDirty()
+                    }}
+                    onFocus={() => setActiveZone(key)}
+                    onDragOver={handleDragOver}
+                    onDrop={handleCodeDrop}
+                    spellCheck={false}
+                    aria-label={`Code HTML — ${label}`}
+                  />
+                )}
               </div>
             ))}
           </div>

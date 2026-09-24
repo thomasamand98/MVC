@@ -10,7 +10,7 @@ export class MessageController {
   // ?societeId=X (obligatoire) : liste des messages envoyés liés à cette
   // société — voir MessageService.getMessagesBySociete.
   @Get('messages')
-  async getMessages(@Query('societeId') societeId: string) {
-    return this.messageService.getMessagesBySociete(BigInt(societeId));
+  async getMessages(@Query('societeId') societeId: string, @Query('search') search?: string) {
+    return this.messageService.getMessagesBySociete(BigInt(societeId), search);
   }
 }

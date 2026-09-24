@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import '../../components/PageActions.css'
 import type { PointageDetail } from './usePointage.js'
 import type { Personnel } from '../personnel/usePersonnel.js'
 
@@ -25,6 +26,9 @@ export type PointageDto = {
 
 type Props = {
   initial: PointageDetail | null
+  // Valeurs préremplies en création (projection depuis une seule ligne,
+  // voir components/projection/relations.ts) — ignorées en modification.
+  defaults?: Partial<PointageDto>
   // Liste du personnel pour le sélecteur — chargée par PointagePage et
   // passée en prop plutôt que rechargée ici, pour ne pas refaire un GET
   // /personnel à chaque ouverture de la modale.
@@ -68,7 +72,7 @@ function fromTimeInput(value: string): string {
 // CrudPage avant l'ouverture de la modale. IDType_Statut n'a pas de
 // sélecteur dédié (pas de feature Types de statut) — saisi comme
 // identifiant brut.
-export function PointageForm({ initial, personnel, onSubmit, onCancel }: Props) {
+export function PointageForm({ initial, defaults, personnel, onSubmit, onCancel }: Props) {
   const [form, setForm] = useState<PointageDto>({
     IDPERSONNELS: initial?.IDPERSONNELS ?? '',
     IDType_Statut: initial?.IDType_Statut ?? '',
@@ -83,6 +87,7 @@ export function PointageForm({ initial, personnel, onSubmit, onCancel }: Props) 
     Fin_Pause: fromTimeInput(toTimeInput(initial?.Fin_Pause)),
     Nuitee: initial?.Nuitee ?? 0,
     Remarque: initial?.Remarque ?? '',
+    ...(initial ? {} : defaults),
   })
   const [submitting, setSubmitting] = useState(false)
 
@@ -98,6 +103,10 @@ export function PointageForm({ initial, personnel, onSubmit, onCancel }: Props) 
 
   return (
     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginBottom: '0.5rem' }}>
+        <button type="button" className="page-actions-button secondary" onClick={onCancel}>Annuler</button>
+        <button type="submit" className="page-actions-button primary" disabled={submitting}>{submitting ? 'Enregistrement...' : 'Enregistrer'}</button>
+      </div>
       <label style={fieldStyle}>
         Date
         <input
@@ -208,10 +217,6 @@ export function PointageForm({ initial, personnel, onSubmit, onCancel }: Props) 
           onChange={(e) => setForm({ ...form, Remarque: e.target.value })}
         />
       </label>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.5rem' }}>
-        <button type="button" onClick={onCancel}>Annuler</button>
-        <button type="submit" disabled={submitting}>{submitting ? 'Enregistrement...' : 'Enregistrer'}</button>
-      </div>
     </form>
   )
 }

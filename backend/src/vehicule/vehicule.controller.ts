@@ -3,6 +3,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { VehiculeService } from './vehicule.service.js';
 import type { CreateVehiculeDto, UpdateVehiculeDto } from './vehicule.dto.js';
+import { parseProjection } from '../common/projection.js';
 
 @Controller()
 export class VehiculeController {
@@ -11,8 +12,8 @@ export class VehiculeController {
   // ?page=1&pageSize=25 : optionnels — omis, renvoie toute la table (comme
   // avant). Voir VehiculeService.getVehicules pour le détail.
   @Get('vehicules')
-  async getVehicules(@Query('page') page?: string, @Query('pageSize') pageSize?: string) {
-    return this.vehiculeService.getVehicules(page ? Number(page) : undefined, pageSize ? Number(pageSize) : undefined);
+  async getVehicules(@Query('page') page?: string, @Query('pageSize') pageSize?: string, @Query('search') search?: string, @Query('via') via?: string, @Query('ids') ids?: string) {
+    return this.vehiculeService.getVehicules(page ? Number(page) : undefined, pageSize ? Number(pageSize) : undefined, search, parseProjection(via, ids));
   }
 
   @Get('vehicules/:id')

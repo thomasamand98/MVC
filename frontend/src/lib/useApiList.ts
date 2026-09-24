@@ -1,7 +1,13 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { apiJson } from './api'
 
-export type ApiListPagination = { page: number; pageSize: number }
+// `search` : texte du champ « Rechercher » (voir CrudPage.tsx), envoyé en
+// ?search=... et appliqué côté serveur sur toutes les colonnes texte
+// (voir backend/src/common/search.ts) — donc sur toute la table, pas
+// seulement sur la page affichée.
+// `filters` : paramètres supplémentaires envoyés tels quels en query string
+// (ex. { societeId } pour les onglets de la fiche Société).
+export type ApiListPagination = { page: number; pageSize: number; search?: string; filters?: Record<string, string> }
 
 // Récupère une liste depuis l'API backend au montage du composant qui
 // l'utilise. `endpoint` est à la fois le chemin HTTP (ex. "societes" →
@@ -22,19 +28,43 @@ export function useApiList<T>(endpoint: string, pagination?: ApiListPagination) 
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  // Numéro de la dernière requête lancée : une réponse plus ancienne (ex.
+  // recherche « dup » arrivée après « dupont ») est ignorée au lieu
+  // d'écraser la plus récente.
+  const lastRequest = useRef(0)
+
+  // Sérialisé pour servir de dépendance stable : un objet `filters` recréé à
+  // chaque rendu ne doit pas relancer la requête.
+  const filtersKey = JSON.stringify(pagination?.filters ?? {})
 
   const refetch = useCallback(() => {
+    const requestId = ++lastRequest.current
     setLoading(true)
     setError(null)
-    const query = pagination ? `?page=${pagination.page}&pageSize=${pagination.pageSize}` : ''
+    let query = ''
+    if (pagination) {
+      const params = new URLSearchParams({
+        page: String(pagination.page),
+        pageSize: String(pagination.pageSize),
+        ...(JSON.parse(filtersKey) as Record<string, string>),
+      })
+      const search = pagination.search?.trim()
+      if (search) params.set('search', search)
+      query = `?${params.toString()}`
+    }
     return apiJson<Record<string, T[]> & { total?: number }>(`${endpoint}${query}`)
       .then((json) => {
+        if (requestId !== lastRequest.current) return
         setData(json[endpoint])
         setTotal(json.total ?? json[endpoint].length)
       })
-      .catch((err: Error) => setError(err.message))
-      .finally(() => setLoading(false))
-  }, [endpoint, pagination?.page, pagination?.pageSize])
+      .catch((err: Error) => {
+        if (requestId === lastRequest.current) setError(err.message)
+      })
+      .finally(() => {
+        if (requestId === lastRequest.current) setLoading(false)
+      })
+  }, [endpoint, pagination?.page, pagination?.pageSize, pagination?.search, filtersKey])
 
   useEffect(() => {
     refetch()

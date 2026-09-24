@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import '../../components/PageActions.css'
 import type { PersonnelDetail } from './usePersonnel.js'
 
 // Champs scripturables d'un personnel, mêmes clés que le
@@ -121,6 +122,10 @@ export function PersonnelForm({ initial, onSubmit, onCancel }: Props) {
 
   return (
     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginBottom: '0.5rem' }}>
+        <button type="button" className="page-actions-button secondary" onClick={onCancel}>Annuler</button>
+        <button type="submit" className="page-actions-button primary" disabled={submitting}>{submitting ? 'Enregistrement...' : 'Enregistrer'}</button>
+      </div>
       <label style={fieldStyle}>
         Civilité
         <input style={inputStyle} value={form.Civilite_Personnel} onChange={(e) => setForm({ ...form, Civilite_Personnel: e.target.value })} />
@@ -305,10 +310,6 @@ export function PersonnelForm({ initial, onSubmit, onCancel }: Props) {
           onChange={(e) => setForm({ ...form, Commentaire_Personnel: e.target.value })}
         />
       </label>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.5rem' }}>
-        <button type="button" onClick={onCancel}>Annuler</button>
-        <button type="submit" disabled={submitting}>{submitting ? 'Enregistrement...' : 'Enregistrer'}</button>
-      </div>
     </form>
   )
 }

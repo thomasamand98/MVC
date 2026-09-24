@@ -162,28 +162,9 @@
   gap: 0.5rem;
 }
 
-/* Onglets Contacts/Contrats/Messages — listes en lecture seule. */
-.societe-tab-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.85rem;
-}
-
-.societe-tab-table th {
-  text-align: left;
-  border-bottom: 2px solid var(--border);
-  padding: 0.5rem;
-  color: var(--text-h);
-}
-
-.societe-tab-table td {
-  border-bottom: 1px solid var(--border);
-  padding: 0.5rem;
-  color: var(--text);
-}
-
-.societe-tab-loading,
-.societe-tab-empty {
+/* Onglets Contacts/Contrats/Messages : tables standard (CrudPage /
+   DataTable), seul le message de chargement est propre à la fiche. */
+.societe-tab-loading {
   color: var(--text);
   font-size: 0.85rem;
 }

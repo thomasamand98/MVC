@@ -3,6 +3,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { SocietesService } from './societe.service.js';
 import type { CreateSocieteDto, UpdateSocieteDto } from './societe.dto.js';
+import { parseProjection } from '../common/projection.js';
 
 @Controller()
 export class SocieteController {
@@ -11,8 +12,8 @@ export class SocieteController {
   // ?page=1&pageSize=25 : optionnels — omis, renvoie toute la table (comme
   // avant). Voir SocietesService.getSocietes pour le détail.
   @Get('societes')
-  async getSocietes(@Query('page') page?: string, @Query('pageSize') pageSize?: string) {
-    return this.societeService.getSocietes(page ? Number(page) : undefined, pageSize ? Number(pageSize) : undefined);
+  async getSocietes(@Query('page') page?: string, @Query('pageSize') pageSize?: string, @Query('search') search?: string, @Query('via') via?: string, @Query('ids') ids?: string) {
+    return this.societeService.getSocietes(page ? Number(page) : undefined, pageSize ? Number(pageSize) : undefined, search, parseProjection(via, ids));
   }
 
   @Get('societes/:id')

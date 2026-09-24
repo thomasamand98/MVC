@@ -71,6 +71,20 @@
   background: var(--accent-bg);
 }
 
+/* Colonne des cases à cocher (multisélection, voir DataTable.tsx) —
+   largeur fixe, sinon table-layout: fixed lui donnerait une part égale
+   aux autres colonnes. */
+.data-table .data-table-select-cell {
+  width: 36px;
+  text-align: center;
+}
+
+.data-table-select-cell input {
+  cursor: pointer;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
 /* Ligne "dépliée" insérée sous la ligne concernée — voir RowExpandMode.tsx
    (mode "Ligne + bloc"), sous components/view-modes/. */
 .data-table-expanded-row td {
@@ -79,10 +93,29 @@
   background: var(--accent-bg);
 }
 
+.data-table .data-table-empty-row td {
+  text-align: center;
+  padding: 1.5rem 0.5rem;
+  opacity: 0.6;
+}
+
+@media (max-width: 768px) {
+  .data-table tbody .data-table-empty-row td::before {
+    content: none;
+  }
+}
+
 .data-table-toolbar {
   display: flex;
-  justify-content: flex-end;
+  align-items: stretch;
+  gap: 0.5rem;
   margin-bottom: 0.5rem;
+}
+
+/* Exporter reste calé à droite, qu'il y ait ou non un contenu à gauche
+   (voir toolbarStart dans DataTable.tsx). */
+.data-table-export-button {
+  margin-left: auto;
 }
 
 .data-table-export-button {
@@ -150,7 +183,26 @@
     margin-bottom: 0.15rem;
   }
 
-  .data-table tbody tr td:first-child {
+  .data-table tbody tr td:first-child,
+  .data-table tbody tr td.data-table-select-cell + td {
     font-weight: 700;
+  }
+
+  /* En carte : la case à cocher se place en haut à droite, sans libellé. */
+  .data-table tbody tr {
+    position: relative;
+  }
+
+  .data-table tbody td.data-table-select-cell {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.8rem;
+    width: auto;
+    border-bottom: none !important;
+    padding: 0 !important;
+  }
+
+  .data-table tbody td.data-table-select-cell::before {
+    content: none;
   }
 }

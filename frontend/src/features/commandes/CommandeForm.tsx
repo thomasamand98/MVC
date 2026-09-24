@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import '../../components/PageActions.css'
 import type { Commande } from './useCommandes.js'
 import type { Contrat } from '../contrats/useContrats.js'
 
@@ -19,6 +20,9 @@ export type CommandeDto = {
 
 type Props = {
   initial: Commande | null
+  // Valeurs préremplies en création (projection depuis une seule ligne,
+  // voir components/projection/relations.ts) — ignorées en modification.
+  defaults?: Partial<CommandeDto>
   // Liste des contrats pour le sélecteur — chargée par CommandesPage et
   // passée en prop plutôt que rechargée ici, pour ne pas refaire un GET
   // /contrats à chaque ouverture de la modale.
@@ -42,7 +46,7 @@ function toDateInput(value: string | null | undefined): string {
 // champs avec la ligne cliquée dans le tableau. IDPRESTATIONS n'a pas de
 // sélecteur dédié (pas de feature Prestations) — saisi comme identifiant
 // brut.
-export function CommandeForm({ initial, contrats, onSubmit, onCancel }: Props) {
+export function CommandeForm({ initial, defaults, contrats, onSubmit, onCancel }: Props) {
   const [form, setForm] = useState<CommandeDto>({
     Date_commande: toDateInput(initial?.Date_commande),
     IDCONTRATS: initial?.IDCONTRATS ?? '',
@@ -52,6 +56,7 @@ export function CommandeForm({ initial, contrats, onSubmit, onCancel }: Props) {
     Statut: initial?.Statut ?? '',
     NumRef: initial?.NumRef ?? '',
     Instruction: initial?.Instruction ?? '',
+    ...(initial ? {} : defaults),
   })
   const [submitting, setSubmitting] = useState(false)
 
@@ -67,6 +72,10 @@ export function CommandeForm({ initial, contrats, onSubmit, onCancel }: Props) {
 
   return (
     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginBottom: '0.5rem' }}>
+        <button type="button" className="page-actions-button secondary" onClick={onCancel}>Annuler</button>
+        <button type="submit" className="page-actions-button primary" disabled={submitting}>{submitting ? 'Enregistrement...' : 'Enregistrer'}</button>
+      </div>
       <label style={fieldStyle}>
         Date
         <input type="date" style={inputStyle} value={form.Date_commande} onChange={(e) => setForm({ ...form, Date_commande: e.target.value })} />
@@ -114,10 +123,6 @@ export function CommandeForm({ initial, contrats, onSubmit, onCancel }: Props) {
           onChange={(e) => setForm({ ...form, Instruction: e.target.value })}
         />
       </label>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.5rem' }}>
-        <button type="button" onClick={onCancel}>Annuler</button>
-        <button type="submit" disabled={submitting}>{submitting ? 'Enregistrement...' : 'Enregistrer'}</button>
-      </div>
     </form>
   )
 }

@@ -3,6 +3,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { CommandeService } from './commande.service.js';
 import type { CreateCommandeDto, UpdateCommandeDto } from './commande.dto.js';
+import { parseProjection } from '../common/projection.js';
 
 @Controller()
 export class CommandeController {
@@ -11,8 +12,8 @@ export class CommandeController {
   // ?page=1&pageSize=25 : optionnels — omis, renvoie toute la table (comme
   // avant). Voir CommandeService.getCommandes pour le détail.
   @Get('commandes')
-  async getCommandes(@Query('page') page?: string, @Query('pageSize') pageSize?: string) {
-    return this.commandeService.getCommandes(page ? Number(page) : undefined, pageSize ? Number(pageSize) : undefined);
+  async getCommandes(@Query('page') page?: string, @Query('pageSize') pageSize?: string, @Query('search') search?: string, @Query('via') via?: string, @Query('ids') ids?: string) {
+    return this.commandeService.getCommandes(page ? Number(page) : undefined, pageSize ? Number(pageSize) : undefined, search, parseProjection(via, ids));
   }
 
   @Get('commandes/:id')

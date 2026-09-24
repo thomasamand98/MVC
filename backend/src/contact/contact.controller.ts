@@ -3,6 +3,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ContactService } from './contact.service.js';
 import type { CreateContactDto, UpdateContactDto } from './contact.dto.js';
+import { parseProjection } from '../common/projection.js';
 
 @Controller()
 export class ContactController {
@@ -11,8 +12,8 @@ export class ContactController {
   // ?page=1&pageSize=25 : optionnels — omis, renvoie toute la table (comme
   // avant). Voir ContactService.getContacts pour le détail.
   @Get('contacts')
-  async getContacts(@Query('page') page?: string, @Query('pageSize') pageSize?: string) {
-    return this.contactService.getContacts(page ? Number(page) : undefined, pageSize ? Number(pageSize) : undefined);
+  async getContacts(@Query('page') page?: string, @Query('pageSize') pageSize?: string, @Query('search') search?: string, @Query('societeId') societeId?: string, @Query('via') via?: string, @Query('ids') ids?: string) {
+    return this.contactService.getContacts(page ? Number(page) : undefined, pageSize ? Number(pageSize) : undefined, search, societeId, parseProjection(via, ids));
   }
 
   @Get('contacts/:id')

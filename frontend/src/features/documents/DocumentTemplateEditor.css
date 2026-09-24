@@ -33,6 +33,31 @@
   margin-left: auto;
 }
 
+/* `display: contents` : le fieldset reste dans l'arbre du DOM (pour que son
+   attribut `disabled` désactive ses boutons/select en mode code source, voir
+   EditorToolbar.tsx) sans devenir lui-même un item flex de .dte-toolbar — ses
+   enfants directs le redeviennent, comme avant son ajout. */
+.dte-toolbar-fieldset {
+  display: contents;
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* `opacity` sur le fieldset lui-même n'aurait aucun effet visuel (`display:
+   contents` le retire de l'arbre des boîtes) — appliqué directement à ses
+   boutons/select désactivés. */
+.dte-toolbar button:disabled,
+.dte-toolbar select:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.dte-toolbar button[aria-pressed='true'] {
+  background: var(--dte-accent);
+  color: #fff;
+}
+
 .dte-toolbar button {
   display: inline-flex;
   align-items: center;
@@ -65,23 +90,36 @@
 
 /* ---------- Mise en page palette / canvas ---------- */
 
+/* `align-items: start` : sans ça, une grille étire ses colonnes à la même
+   hauteur — la palette (courte) serait artificiellement étirée à la hauteur
+   du canvas (parfois plusieurs pages de contrat), ce qui casserait son
+   positionnement `sticky` ci-dessous. Plus de hauteur fixée (l'ancien
+   `height: 70vh` forçait un mini-scroll interne en plus du défilement normal
+   de la page — cadre exigu qui coupait visuellement le pied de page dès que
+   le modèle dépassait une page A4) : le canvas prend sa hauteur naturelle, et
+   c'est le défilement normal de la page qui s'en charge. */
 .dte-body {
   display: grid;
   grid-template-columns: minmax(220px, 280px) 1fr;
+  align-items: start;
   gap: 0.75rem;
   min-height: 32rem;
-  height: 70vh;
 }
 
 @media (max-width: 900px) {
   .dte-body {
     grid-template-columns: 1fr;
-    height: auto;
   }
 }
 
 /* ---------- Palette de champs ---------- */
 
+/* Ancrée en haut de l'écran pendant le défilement (voir .dte-body) plutôt
+   qu'un simple `overflow-y: auto` d'ancienne hauteur fixe : reste accessible
+   même quand le canvas fait plusieurs pages de haut, sans créer son propre
+   cadre de défilement séparé. `max-height`/`overflow-y` bornent sa propre
+   liste, potentiellement plus haute que l'écran une fois tous les groupes
+   dépliés. */
 .dte-palette {
   display: flex;
   flex-direction: column;
@@ -90,7 +128,17 @@
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 0.6rem;
+  position: sticky;
+  top: 0.75rem;
+  max-height: calc(100vh - 1.5rem);
   overflow-y: auto;
+}
+
+@media (max-width: 900px) {
+  .dte-palette {
+    position: static;
+    max-height: none;
+  }
 }
 
 .dte-palette-search {
@@ -224,7 +272,6 @@
 /* ---------- Canvas (page A4) ---------- */
 
 .dte-canvas-scroll {
-  overflow-y: auto;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--code-bg);
@@ -294,6 +341,37 @@
 
 .dte-zone-canvas-content {
   min-height: 60mm;
+}
+
+/* ---------- Zone en mode code source ---------- */
+
+.dte-zone-code {
+  display: block;
+  width: 100%;
+  /* Bien plus grand que la zone visuelle qu'il remplace (voir
+     .dte-zone-canvas, 2.4rem) : en-tête/pied tiennent en quelques lignes en
+     rendu visuel, mais leur HTML brut (classes, attributs data-*) est
+     nettement plus long à lire — voir domInsert.ts. */
+  min-height: 18rem;
+  border: none;
+  resize: vertical;
+  background: var(--code-bg);
+  color: var(--text-h);
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  padding: 0.6rem 0.7rem;
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+
+.dte-zone-content .dte-zone-code {
+  min-height: 34rem;
+}
+
+.dte-zone-code:focus {
+  outline: 2px solid var(--dte-accent);
+  outline-offset: -2px;
 }
 
 .dte-zone-canvas p {

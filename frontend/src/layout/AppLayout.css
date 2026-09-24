@@ -35,9 +35,6 @@
    assombri ; le contenu récupère un peu d'espace en haut pour ne pas
    passer sous le bouton. */
 @media (max-width: 768px) {
-  .app-layout {
-    padding-top: 3.25rem;
-  }
 
   .app-layout-menu-toggle {
     display: inline-flex;

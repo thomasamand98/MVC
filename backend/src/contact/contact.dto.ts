@@ -16,6 +16,13 @@ export type CreateContactDto = {
   Adresse_entreprise?: number;
   description_telephone?: string;
   IDADRESSES?: string;
+  // Société principale du contact (liste « Société » de la fiche) : lien
+  // SocieteContacts avec sa fonction/service, géré à part du contact
+  // lui-même (voir createContact/updateContact dans contact.service.ts).
+  // Vide en modification : retire la société principale.
+  IDSOCIETES?: string;
+  Fonction_contact?: string;
+  Service_bureau?: string;
 };
 
 export type UpdateContactDto = Partial<CreateContactDto>;

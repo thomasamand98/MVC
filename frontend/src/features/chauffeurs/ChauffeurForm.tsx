@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import '../../components/PageActions.css'
 import type { Chauffeur } from './useChauffeurs.js'
 import type { Societe } from '../societes/useSocietes.js'
 
@@ -17,6 +18,9 @@ export type ChauffeurDto = {
 
 type Props = {
   initial: Chauffeur | null
+  // Valeurs préremplies en création (projection depuis une seule ligne,
+  // voir components/projection/relations.ts) — ignorées en modification.
+  defaults?: Partial<ChauffeurDto>
   // Liste des sociétés pour le sélecteur — chargée par ChauffeursPage et
   // passée en prop plutôt que rechargée ici, pour ne pas refaire un GET
   // /societes à chaque ouverture de la modale.
@@ -32,7 +36,7 @@ const inputStyle = { padding: '0.4rem 0.5rem', border: '1px solid var(--border)'
 // ChauffeursPage.tsx). `initial` vaut null en création, sinon pré-remplit
 // les champs avec la ligne cliquée dans le tableau. IDPERSONNELS n'a pas de
 // sélecteur dédié (pas de feature Personnel) — saisi comme identifiant brut.
-export function ChauffeurForm({ initial, societes, onSubmit, onCancel }: Props) {
+export function ChauffeurForm({ initial, defaults, societes, onSubmit, onCancel }: Props) {
   const [form, setForm] = useState<ChauffeurDto>({
     Nom_chauffeur: initial?.Nom_chauffeur ?? '',
     Telephone: initial?.Telephone ?? '',
@@ -40,6 +44,7 @@ export function ChauffeurForm({ initial, societes, onSubmit, onCancel }: Props) 
     Archive: initial?.Archive ?? 0,
     IDPERSONNELS: initial?.IDPERSONNELS ?? '',
     IDSOCIETES: initial?.IDSOCIETES ?? '',
+    ...(initial ? {} : defaults),
   })
   const [submitting, setSubmitting] = useState(false)
 
@@ -55,6 +60,10 @@ export function ChauffeurForm({ initial, societes, onSubmit, onCancel }: Props) 
 
   return (
     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginBottom: '0.5rem' }}>
+        <button type="button" className="page-actions-button secondary" onClick={onCancel}>Annuler</button>
+        <button type="submit" className="page-actions-button primary" disabled={submitting}>{submitting ? 'Enregistrement...' : 'Enregistrer'}</button>
+      </div>
       <label style={fieldStyle}>
         Chauffeur
         <input style={inputStyle} value={form.Nom_chauffeur} onChange={(e) => setForm({ ...form, Nom_chauffeur: e.target.value })} />
@@ -92,10 +101,6 @@ export function ChauffeurForm({ initial, societes, onSubmit, onCancel }: Props) 
           <option value={1}>Oui</option>
         </select>
       </label>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.5rem' }}>
-        <button type="button" onClick={onCancel}>Annuler</button>
-        <button type="submit" disabled={submitting}>{submitting ? 'Enregistrement...' : 'Enregistrer'}</button>
-      </div>
     </form>
   )
 }

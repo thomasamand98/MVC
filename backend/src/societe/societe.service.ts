@@ -4,6 +4,8 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { buildSearchWhere } from '../common/search.js';
+import { andWhere, projectionWhere, type Projection, type ProjectionMap } from '../common/projection.js';
 import { serializeBigInt } from '../prisma/serialize-bigint.js';
 import { CreateSocieteDto, UpdateSocieteDto } from './societe.dto.js';
 
@@ -69,6 +71,16 @@ export const societeDetailSelect = {
   },
 } satisfies Prisma.SocieteSelect;
 
+// Projection (voir common/projection.ts) : pour chaque table source, les
+// lignes de cette table liées aux ids sélectionnés.
+const societeProjections: ProjectionMap<Prisma.SocieteWhereInput> = {
+  contrats: (ids) => ({ Contrats: { some: { IDCONTRATS: { in: ids } } } }),
+  contacts: (ids) => ({ SocieteContacts: { some: { IDCONTACTS: { in: ids } } } }),
+  chauffeurs: (ids) => ({ Chauffeurs: { some: { IDCHAUFFEURS: { in: ids } } } }),
+  vehicules: (ids) => ({ Vehicules: { some: { IDVEHICULES: { in: ids } } } }),
+  points: (ids) => ({ Points: { some: { IDPOINTS: { in: ids } } } }),
+};
+
 @Injectable()
 export class SocietesService {
   constructor(private readonly prisma: PrismaService) {}
@@ -77,15 +89,24 @@ export class SocietesService {
   // table). Fournis, la requête est découpée avec skip/take et `total`
   // (nombre total de lignes, pas juste celles de la page) est renvoyé à
   // côté pour que le frontend puisse calculer le nombre de pages.
-  async getSocietes(page?: number, pageSize?: number) {
+  async getSocietes(page?: number, pageSize?: number, search?: string, projection?: Projection) {
     const paginate = page !== undefined && pageSize !== undefined && pageSize > 0;
+    const filterWhere = buildSearchWhere<Prisma.SocieteWhereInput>(search, (c) => [
+      { Nom_societe: c },
+      { Denomination: c },
+      { TVA: c },
+      { Activite: c },
+      { Site_web: c },
+    ]);
+    const where = andWhere<Prisma.SocieteWhereInput>(filterWhere, projectionWhere(societeProjections, projection));
     const [societes, total] = await Promise.all([
       this.prisma.societe.findMany({
+        where,
         orderBy: { Nom_societe: 'asc' },
         select: societeSelect,
         ...(paginate ? { skip: (page - 1) * pageSize, take: pageSize } : {}),
       }),
-      this.prisma.societe.count(),
+      this.prisma.societe.count({ where }),
     ]);
     return { societes: serializeBigInt(societes), total };
   }

@@ -4,6 +4,8 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { buildSearchWhere } from '../common/search.js';
+import { andWhere, projectionWhere, type Projection, type ProjectionMap } from '../common/projection.js';
 import { serializeBigInt } from '../prisma/serialize-bigint.js';
 import { CreateAttelageDto, UpdateAttelageDto } from './attelage.dto.js';
 
@@ -24,6 +26,14 @@ export const attelageSelect = {
   Date_fin: true,
 } satisfies Prisma.AttelageSelect;
 
+// Projection (voir common/projection.ts) : pour chaque table source, les
+// lignes de cette table liées aux ids sélectionnés.
+const attelageProjections: ProjectionMap<Prisma.AttelageWhereInput> = {
+  chauffeurs: (ids) => ({ IDCHAUFFEUR: { in: ids } }),
+  personnel: (ids) => ({ IDPERSONNELS: { in: ids } }),
+  vehicules: (ids) => ({ OR: [{ IDTRACTEUR: { in: ids } }, { IDREMORQUE: { in: ids } }] }),
+};
+
 @Injectable()
 export class AttelageService {
   constructor(private readonly prisma: PrismaService) {}
@@ -32,15 +42,26 @@ export class AttelageService {
   // table). Fournis, la requête est découpée avec skip/take et `total`
   // (nombre total de lignes, pas juste celles de la page) est renvoyé à
   // côté pour que le frontend puisse calculer le nombre de pages.
-  async getAttelages(page?: number, pageSize?: number) {
+  async getAttelages(page?: number, pageSize?: number, search?: string, projection?: Projection) {
     const paginate = page !== undefined && pageSize !== undefined && pageSize > 0;
+    const filterWhere = buildSearchWhere<Prisma.AttelageWhereInput>(search, (c) => [
+      { Chauffeur: { Nom_chauffeur: c } },
+      { Tracteur: { Marque: c } },
+      { Tracteur: { Modele: c } },
+      { Tracteur: { Num_immat: c } },
+      { Remorque: { Marque: c } },
+      { Remorque: { Modele: c } },
+      { Remorque: { Num_immat: c } },
+    ]);
+    const where = andWhere<Prisma.AttelageWhereInput>(filterWhere, projectionWhere(attelageProjections, projection));
     const [attelages, total] = await Promise.all([
       this.prisma.attelage.findMany({
+        where,
         orderBy: { IDATTELAGE: 'asc' },
         select: attelageSelect,
         ...(paginate ? { skip: (page - 1) * pageSize, take: pageSize } : {}),
       }),
-      this.prisma.attelage.count(),
+      this.prisma.attelage.count({ where }),
     ]);
     return { attelages: serializeBigInt(attelages), total };
   }

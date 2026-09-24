@@ -36,6 +36,16 @@
   opacity: 0.88;
 }
 
+.page-actions-button.secondary {
+  background: transparent;
+  color: inherit;
+  border-color: var(--border);
+}
+
+.page-actions-button.secondary:hover:not(:disabled) {
+  background: var(--accent-bg);
+}
+
 .page-actions-button.danger {
   background: var(--danger-bg);
   color: var(--danger);

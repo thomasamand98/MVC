@@ -5,6 +5,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { buildSearchWhere } from '../common/search.js';
 import { serializeBigInt } from '../prisma/serialize-bigint.js';
 
 export const messageSelect = {
@@ -21,9 +22,18 @@ export const messageSelect = {
 export class MessageService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getMessagesBySociete(societeId: bigint) {
+  // search : champ Rechercher de l'onglet (voir common/search.ts).
+  async getMessagesBySociete(societeId: bigint, search?: string) {
     const messages = await this.prisma.message.findMany({
-      where: { IDSOCIETES: societeId },
+      where: {
+        IDSOCIETES: societeId,
+        ...buildSearchWhere<Prisma.MessageWhereInput>(search, (c) => [
+          { Sujet: c },
+          { Destinataire: c },
+          { Type_message: c },
+          { NomContact: c },
+        ]),
+      },
       orderBy: { Date_heure_creation: 'desc' },
       select: messageSelect,
     });

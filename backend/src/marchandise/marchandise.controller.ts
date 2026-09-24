@@ -3,6 +3,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { MarchandiseService } from './marchandise.service.js';
 import type { CreateMarchandiseDto, UpdateMarchandiseDto } from './marchandise.dto.js';
+import { parseProjection } from '../common/projection.js';
 
 @Controller()
 export class MarchandiseController {
@@ -11,8 +12,8 @@ export class MarchandiseController {
   // ?page=1&pageSize=25 : optionnels — omis, renvoie toute la table (comme
   // avant). Voir MarchandiseService.getMarchandises pour le détail.
   @Get('marchandises')
-  async getMarchandises(@Query('page') page?: string, @Query('pageSize') pageSize?: string) {
-    return this.marchandiseService.getMarchandises(page ? Number(page) : undefined, pageSize ? Number(pageSize) : undefined);
+  async getMarchandises(@Query('page') page?: string, @Query('pageSize') pageSize?: string, @Query('search') search?: string, @Query('via') via?: string, @Query('ids') ids?: string) {
+    return this.marchandiseService.getMarchandises(page ? Number(page) : undefined, pageSize ? Number(pageSize) : undefined, search, parseProjection(via, ids));
   }
 
   @Get('marchandises/:id')

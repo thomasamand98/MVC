@@ -4,6 +4,8 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { buildSearchWhere } from '../common/search.js';
+import { andWhere, projectionWhere, type Projection, type ProjectionMap } from '../common/projection.js';
 import { serializeBigInt } from '../prisma/serialize-bigint.js';
 import { CreateContratDto, UpdateContratDto } from './contrat.dto.js';
 import { conditionCmrSelect } from '../condition-cmr/condition-cmr.service.js';
@@ -115,6 +117,13 @@ const contratMergeSelect = {
   },
 } satisfies Prisma.ContratSelect;
 
+// Projection (voir common/projection.ts) : pour chaque table source, les
+// lignes de cette table liées aux ids sélectionnés.
+const contratProjections: ProjectionMap<Prisma.ContratWhereInput> = {
+  societes: (ids) => ({ IDSOCIETES: { in: ids } }),
+  commandes: (ids) => ({ Commandes: { some: { IDCOMMANDES: { in: ids } } } }),
+};
+
 @Injectable()
 export class ContratService {
   constructor(
@@ -130,9 +139,18 @@ export class ContratService {
   // societeId optionnel : ne renvoie que les contrats de cette société —
   // alimente l'onglet « Contrats / Offres » de la fiche Société
   // (SocieteForm.tsx).
-  async getContrats(page?: number, pageSize?: number, societeId?: string) {
+  async getContrats(page?: number, pageSize?: number, societeId?: string, search?: string, projection?: Projection) {
     const paginate = page !== undefined && pageSize !== undefined && pageSize > 0;
-    const where = societeId ? { IDSOCIETES: BigInt(societeId) } : undefined;
+    const filterWhere: Prisma.ContratWhereInput = {
+      ...(societeId ? { IDSOCIETES: BigInt(societeId) } : {}),
+      ...buildSearchWhere<Prisma.ContratWhereInput>(search, (c) => [
+        { Num_contrat: c },
+        { Description_projet: c },
+        { Societe: { Nom_societe: c } },
+        { Societe: { TVA: c } },
+      ]),
+    };
+    const where = andWhere<Prisma.ContratWhereInput>(filterWhere, projectionWhere(contratProjections, projection));
     const [contrats, total] = await Promise.all([
       this.prisma.contrat.findMany({
         where,

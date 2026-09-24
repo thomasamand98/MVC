@@ -4,6 +4,8 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { buildSearchWhere } from '../common/search.js';
+import { andWhere, projectionWhere, type Projection, type ProjectionMap } from '../common/projection.js';
 import { serializeBigInt } from '../prisma/serialize-bigint.js';
 import { CreateCommandeDto, UpdateCommandeDto } from './commande.dto.js';
 
@@ -25,6 +27,13 @@ export const commandeSelect = {
   Instruction: true,
 } satisfies Prisma.CommandeSelect;
 
+// Projection (voir common/projection.ts) : pour chaque table source, les
+// lignes de cette table liées aux ids sélectionnés.
+const commandeProjections: ProjectionMap<Prisma.CommandeWhereInput> = {
+  contrats: (ids) => ({ IDCONTRATS: { in: ids } }),
+  marchandises: (ids) => ({ Prestation: { IDMARCHANDISES: { in: ids } } }),
+};
+
 @Injectable()
 export class CommandeService {
   constructor(private readonly prisma: PrismaService) {}
@@ -33,15 +42,24 @@ export class CommandeService {
   // table). Fournis, la requête est découpée avec skip/take et `total`
   // (nombre total de lignes, pas juste celles de la page) est renvoyé à
   // côté pour que le frontend puisse calculer le nombre de pages.
-  async getCommandes(page?: number, pageSize?: number) {
+  async getCommandes(page?: number, pageSize?: number, search?: string, projection?: Projection) {
     const paginate = page !== undefined && pageSize !== undefined && pageSize > 0;
+    const filterWhere = buildSearchWhere<Prisma.CommandeWhereInput>(search, (c) => [
+      { NumRef: c },
+      { Instruction: c },
+      { Contrat: { Num_contrat: c } },
+      { Contrat: { Societe: { Nom_societe: c } } },
+      { Prestation: { Marchandise: { Nom_marchandise: c } } },
+    ]);
+    const where = andWhere<Prisma.CommandeWhereInput>(filterWhere, projectionWhere(commandeProjections, projection));
     const [commandes, total] = await Promise.all([
       this.prisma.commande.findMany({
+        where,
         orderBy: { IDCOMMANDES: 'asc' },
         select: commandeSelect,
         ...(paginate ? { skip: (page - 1) * pageSize, take: pageSize } : {}),
       }),
-      this.prisma.commande.count(),
+      this.prisma.commande.count({ where }),
     ]);
     return { commandes: serializeBigInt(commandes), total };
   }

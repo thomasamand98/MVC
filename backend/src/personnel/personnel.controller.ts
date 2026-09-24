@@ -3,6 +3,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { PersonnelService } from './personnel.service.js';
 import type { CreatePersonnelDto, UpdatePersonnelDto } from './personnel.dto.js';
+import { parseProjection } from '../common/projection.js';
 
 @Controller()
 export class PersonnelController {
@@ -11,8 +12,8 @@ export class PersonnelController {
   // ?page=1&pageSize=25 : optionnels — omis, renvoie toute la table (comme
   // avant). Voir PersonnelService.getPersonnels pour le détail.
   @Get('personnel')
-  async getPersonnels(@Query('page') page?: string, @Query('pageSize') pageSize?: string) {
-    return this.personnelService.getPersonnels(page ? Number(page) : undefined, pageSize ? Number(pageSize) : undefined);
+  async getPersonnels(@Query('page') page?: string, @Query('pageSize') pageSize?: string, @Query('search') search?: string, @Query('via') via?: string, @Query('ids') ids?: string) {
+    return this.personnelService.getPersonnels(page ? Number(page) : undefined, pageSize ? Number(pageSize) : undefined, search, parseProjection(via, ids));
   }
 
   @Get('personnel/:id')

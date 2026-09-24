@@ -5,13 +5,18 @@ import { CrudPage } from '../../components/CrudPage.js'
 import { SocieteForm, type SocieteDto } from './SocieteForm.js'
 import { useApiMutation } from '../../lib/useApiMutation.js'
 import { useContacts } from '../contacts/useContacts.js'
+import { projectionFilters, type ProjectionView } from '../../components/projection/relations.js'
 
 const DEFAULT_PAGE_SIZE = 25
 
-export function SocietesPage() {
+// `projection` : page ouverte en résultat d'une projection (voir
+// components/projection/ProjectionProvider.tsx) — filtrée sur les lignes
+// d'origine, avec son propre en-tête.
+export function SocietesPage({ projection }: { projection?: ProjectionView } = {}) {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
-  const { societes, setSocietes, loading, error, refetch, total } = useSocietes({ page, pageSize })
+  const [search, setSearch] = useState('')
+  const { societes, setSocietes, loading, error, refetch, total } = useSocietes({ page, pageSize, search, filters: projectionFilters(projection) })
   const { get, create, update, remove } = useApiMutation<SocieteDto, Societe, SocieteDetail>('societes')
   // Chargée ici (une fois, tant que l'onglet Sociétés reste monté) et
   // passée au formulaire pour les sélecteurs « Contact pour la
@@ -41,10 +46,15 @@ export function SocietesPage() {
         total,
         onPageChange: setPage,
         onPageSizeChange: (size) => { setPageSize(size); setPage(1) },
+        search,
+        onSearchChange: (value) => { setSearch(value); setPage(1) },
       }}
       deleteConfirmMessage="Supprimer cette société ?"
       createModalTitle="Nouvelle société"
       editModalTitle="Modifier la société"
+      entity="societes"
+      heading={projection?.heading}
+      newRecordScope={projection ? `projection:${projection.source}:${projection.ids.join(',')}` : undefined}
       renderForm={({ initial, onSubmit, onCancel }) => (
         <SocieteForm initial={initial} contacts={contacts} onSubmit={onSubmit} onCancel={onCancel} />
       )}

@@ -5,13 +5,18 @@ import { CrudPage } from '../../components/CrudPage.js'
 import { VehiculeForm, type VehiculeDto } from './VehiculeForm.js'
 import { useApiMutation } from '../../lib/useApiMutation.js'
 import { useSocietes } from '../societes/useSocietes.js'
+import { projectionFilters, type ProjectionView } from '../../components/projection/relations.js'
 
 const DEFAULT_PAGE_SIZE = 25
 
-export function VehiculesPage() {
+// `projection` : page ouverte en résultat d'une projection (voir
+// components/projection/ProjectionProvider.tsx) — filtrée sur les lignes
+// d'origine, avec son propre en-tête.
+export function VehiculesPage({ projection }: { projection?: ProjectionView } = {}) {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
-  const { vehicules, setVehicules, loading, error, refetch, total } = useVehicules({ page, pageSize })
+  const [search, setSearch] = useState('')
+  const { vehicules, setVehicules, loading, error, refetch, total } = useVehicules({ page, pageSize, search, filters: projectionFilters(projection) })
   const { get, create, update, remove } = useApiMutation<VehiculeDto, Vehicule, VehiculeDetail>('vehicules')
   // Chargée ici (une fois, tant que l'onglet Véhicules reste monté) et
   // passée au formulaire pour le sélecteur Société — évite de la
@@ -39,12 +44,17 @@ export function VehiculesPage() {
         total,
         onPageChange: setPage,
         onPageSizeChange: (size) => { setPageSize(size); setPage(1) },
+        search,
+        onSearchChange: (value) => { setSearch(value); setPage(1) },
       }}
       deleteConfirmMessage="Supprimer ce véhicule ?"
       createModalTitle="Nouveau véhicule"
       editModalTitle="Modifier le véhicule"
+      entity="vehicules"
+      heading={projection?.heading}
+      newRecordScope={projection ? `projection:${projection.source}:${projection.ids.join(',')}` : undefined}
       renderForm={({ initial, onSubmit, onCancel }) => (
-        <VehiculeForm initial={initial} societes={societes} onSubmit={onSubmit} onCancel={onCancel} />
+        <VehiculeForm initial={initial} defaults={projection?.defaults} societes={societes} onSubmit={onSubmit} onCancel={onCancel} />
       )}
     />
   )

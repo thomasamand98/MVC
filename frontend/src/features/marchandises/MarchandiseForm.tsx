@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import '../../components/PageActions.css'
 import type { MarchandiseDetail } from './useMarchandises.js'
 
 // Champs scripturables d'une marchandise, mêmes clés que le
@@ -51,6 +52,10 @@ export function MarchandiseForm({ initial, onSubmit, onCancel }: Props) {
 
   return (
     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginBottom: '0.5rem' }}>
+        <button type="button" className="page-actions-button secondary" onClick={onCancel}>Annuler</button>
+        <button type="submit" className="page-actions-button primary" disabled={submitting}>{submitting ? 'Enregistrement...' : 'Enregistrer'}</button>
+      </div>
       <label style={fieldStyle}>
         Marchandise
         <input style={inputStyle} value={form.Nom_marchandise} onChange={(e) => setForm({ ...form, Nom_marchandise: e.target.value })} />
@@ -82,10 +87,6 @@ export function MarchandiseForm({ initial, onSubmit, onCancel }: Props) {
           Déchet actuel : {initial.Dechet.Description_dechet ?? '—'}
         </p>
       )}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.5rem' }}>
-        <button type="button" onClick={onCancel}>Annuler</button>
-        <button type="submit" disabled={submitting}>{submitting ? 'Enregistrement...' : 'Enregistrer'}</button>
-      </div>
     </form>
   )
 }

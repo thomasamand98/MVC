@@ -5,13 +5,18 @@ import { CrudPage } from '../../components/CrudPage.js'
 import { ChauffeurForm, type ChauffeurDto } from './ChauffeurForm.js'
 import { useApiMutation } from '../../lib/useApiMutation.js'
 import { useSocietes } from '../societes/useSocietes.js'
+import { projectionFilters, type ProjectionView } from '../../components/projection/relations.js'
 
 const DEFAULT_PAGE_SIZE = 25
 
-export function ChauffeursPage() {
+// `projection` : page ouverte en résultat d'une projection (voir
+// components/projection/ProjectionProvider.tsx) — filtrée sur les lignes
+// d'origine, avec son propre en-tête.
+export function ChauffeursPage({ projection }: { projection?: ProjectionView } = {}) {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
-  const { chauffeurs, setChauffeurs, loading, error, refetch, total } = useChauffeurs({ page, pageSize })
+  const [search, setSearch] = useState('')
+  const { chauffeurs, setChauffeurs, loading, error, refetch, total } = useChauffeurs({ page, pageSize, search, filters: projectionFilters(projection) })
   const { create, update, remove } = useApiMutation<ChauffeurDto, Chauffeur>('chauffeurs')
   // Chargée ici (une fois, tant que l'onglet Chauffeurs reste monté) et
   // passée au formulaire pour le sélecteur Société — évite de la
@@ -38,12 +43,17 @@ export function ChauffeursPage() {
         total,
         onPageChange: setPage,
         onPageSizeChange: (size) => { setPageSize(size); setPage(1) },
+        search,
+        onSearchChange: (value) => { setSearch(value); setPage(1) },
       }}
       deleteConfirmMessage="Supprimer ce chauffeur ?"
       createModalTitle="Nouveau chauffeur"
       editModalTitle="Modifier le chauffeur"
+      entity="chauffeurs"
+      heading={projection?.heading}
+      newRecordScope={projection ? `projection:${projection.source}:${projection.ids.join(',')}` : undefined}
       renderForm={({ initial, onSubmit, onCancel }) => (
-        <ChauffeurForm initial={initial} societes={societes} onSubmit={onSubmit} onCancel={onCancel} />
+        <ChauffeurForm initial={initial} defaults={projection?.defaults} societes={societes} onSubmit={onSubmit} onCancel={onCancel} />
       )}
     />
   )

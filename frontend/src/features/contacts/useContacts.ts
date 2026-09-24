@@ -41,7 +41,10 @@ export type ContactDetail = {
   description_telephone: string | null
   IDADRESSES: string | null
   Adresse: { Adresse1: string | null; CP: string | null; Localite: string | null } | null
+  // Du plus ancien au plus récent : le premier est la société principale
+  // modifiable dans la fiche (voir ContactForm.tsx).
   SocieteContacts: {
+    IDSOCIETES: string | null
     Type_lien: string | null
     Fonction_contact: string | null
     Service_bureau: string | null

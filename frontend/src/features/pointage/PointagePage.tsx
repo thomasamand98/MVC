@@ -5,13 +5,18 @@ import { CrudPage } from '../../components/CrudPage.js'
 import { PointageForm, type PointageDto } from './PointageForm.js'
 import { useApiMutation } from '../../lib/useApiMutation.js'
 import { usePersonnel } from '../personnel/usePersonnel.js'
+import { projectionFilters, type ProjectionView } from '../../components/projection/relations.js'
 
 const DEFAULT_PAGE_SIZE = 25
 
-export function PointagePage() {
+// `projection` : page ouverte en résultat d'une projection (voir
+// components/projection/ProjectionProvider.tsx) — filtrée sur les lignes
+// d'origine, avec son propre en-tête.
+export function PointagePage({ projection }: { projection?: ProjectionView } = {}) {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
-  const { pointage, setPointage, loading, error, refetch, total } = usePointage({ page, pageSize })
+  const [search, setSearch] = useState('')
+  const { pointage, setPointage, loading, error, refetch, total } = usePointage({ page, pageSize, search, filters: projectionFilters(projection) })
   const { get, create, update, remove } = useApiMutation<PointageDto, Pointage, PointageDetail>('pointage')
   // Chargée ici (une fois, tant que l'onglet Pointage reste monté) et
   // passée au formulaire pour le sélecteur Personnel — évite de la
@@ -39,12 +44,17 @@ export function PointagePage() {
         total,
         onPageChange: setPage,
         onPageSizeChange: (size) => { setPageSize(size); setPage(1) },
+        search,
+        onSearchChange: (value) => { setSearch(value); setPage(1) },
       }}
       deleteConfirmMessage="Supprimer ce pointage ?"
       createModalTitle="Nouveau pointage"
       editModalTitle="Modifier le pointage"
+      entity="pointage"
+      heading={projection?.heading}
+      newRecordScope={projection ? `projection:${projection.source}:${projection.ids.join(',')}` : undefined}
       renderForm={({ initial, onSubmit, onCancel }) => (
-        <PointageForm initial={initial} personnel={personnel} onSubmit={onSubmit} onCancel={onCancel} />
+        <PointageForm initial={initial} defaults={projection?.defaults} personnel={personnel} onSubmit={onSubmit} onCancel={onCancel} />
       )}
     />
   )

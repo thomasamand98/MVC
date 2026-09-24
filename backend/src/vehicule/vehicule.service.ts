@@ -4,6 +4,8 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { buildSearchWhere } from '../common/search.js';
+import { andWhere, projectionWhere, type Projection, type ProjectionMap } from '../common/projection.js';
 import { serializeBigInt } from '../prisma/serialize-bigint.js';
 import { CreateVehiculeDto, UpdateVehiculeDto } from './vehicule.dto.js';
 
@@ -36,6 +38,19 @@ export const vehiculeDetailSelect = {
   Avec_compresseur: true,
 } satisfies Prisma.VehiculeSelect;
 
+// Projection (voir common/projection.ts) : pour chaque table source, les
+// lignes de cette table liées aux ids sélectionnés.
+const vehiculeProjections: ProjectionMap<Prisma.VehiculeWhereInput> = {
+  societes: (ids) => ({ IDSOCIETES: { in: ids } }),
+  // Un véhicule est lié à un attelage comme tracteur ou comme remorque.
+  attelages: (ids) => ({
+    OR: [
+      { AttelagesTracteur: { some: { IDATTELAGE: { in: ids } } } },
+      { AttelagesRemorque: { some: { IDATTELAGE: { in: ids } } } },
+    ],
+  }),
+};
+
 @Injectable()
 export class VehiculeService {
   constructor(private readonly prisma: PrismaService) {}
@@ -44,15 +59,26 @@ export class VehiculeService {
   // table). Fournis, la requête est découpée avec skip/take et `total`
   // (nombre total de lignes, pas juste celles de la page) est renvoyé à
   // côté pour que le frontend puisse calculer le nombre de pages.
-  async getVehicules(page?: number, pageSize?: number) {
+  async getVehicules(page?: number, pageSize?: number, search?: string, projection?: Projection) {
     const paginate = page !== undefined && pageSize !== undefined && pageSize > 0;
+    const filterWhere = buildSearchWhere<Prisma.VehiculeWhereInput>(search, (c) => [
+      { Num_immat: c },
+      { Marque: c },
+      { Modele: c },
+      { Societe: { Nom_societe: c } },
+      { Num_police_assurance: c },
+      { Num_chassis: c },
+      { Num_licence_transport: c },
+    ]);
+    const where = andWhere<Prisma.VehiculeWhereInput>(filterWhere, projectionWhere(vehiculeProjections, projection));
     const [vehicules, total] = await Promise.all([
       this.prisma.vehicule.findMany({
+        where,
         orderBy: { IDVEHICULES: 'asc' },
         select: vehiculeSelect,
         ...(paginate ? { skip: (page - 1) * pageSize, take: pageSize } : {}),
       }),
-      this.prisma.vehicule.count(),
+      this.prisma.vehicule.count({ where }),
     ]);
     return { vehicules: serializeBigInt(vehicules), total };
   }

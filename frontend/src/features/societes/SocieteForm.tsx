@@ -2,8 +2,10 @@ import { useState, type FormEvent } from 'react'
 import type { SocieteDetail } from './useSocietes.js'
 import type { Contact } from '../contacts/useContacts.js'
 import { Dev } from '../enDeveloppement/Dev.js'
+import { SocieteContactsTab } from './SocieteContactsTab.js'
 import { SocieteContratsTab } from './SocieteContratsTab.js'
 import { SocieteMessagesTab } from './SocieteMessagesTab.js'
+import '../../components/PageActions.css'
 import './SocieteForm.css'
 
 // Champs scripturables d'une société, mêmes clés que le CreateSocieteDto
@@ -139,6 +141,13 @@ export function SocieteForm({ initial, contacts, onSubmit, onCancel }: Props) {
 
       {topTab === 'principale' && (
         <form onSubmit={handleSubmit} className="societe-form-principale">
+          <div className="societe-form-actions">
+            <button type="button" className="page-actions-button secondary" onClick={onCancel}>Annuler</button>
+            <button type="submit" className="page-actions-button primary" disabled={submitting}>
+              {submitting ? 'Enregistrement...' : 'Enregistrer'}
+            </button>
+          </div>
+
           <div className="societe-form-columns">
             <section className="societe-form-section">
               <h4 className="societe-form-section-title">Coordonnées</h4>
@@ -360,37 +369,11 @@ export function SocieteForm({ initial, contacts, onSubmit, onCancel }: Props) {
               )}
             </section>
           </div>
-
-          <div className="societe-form-actions">
-            <button type="button" onClick={onCancel}>Annuler</button>
-            <button type="submit" disabled={submitting}>{submitting ? 'Enregistrement...' : 'Enregistrer'}</button>
-          </div>
         </form>
       )}
 
-      {topTab === 'contacts' && (
-        initial && initial.SocieteContacts.length > 0 ? (
-          <table className="societe-tab-table">
-            <thead>
-              <tr>
-                <th>Contact</th>
-                <th>Fonction</th>
-                <th>Service / Bureau</th>
-              </tr>
-            </thead>
-            <tbody>
-              {initial.SocieteContacts.map((sc, i) => (
-                <tr key={i}>
-                  <td>{[sc.Contact?.Nom_contact, sc.Contact?.Prenom_contact].filter(Boolean).join(' ') || '—'}</td>
-                  <td>{sc.Fonction_contact || '—'}</td>
-                  <td>{sc.Service_bureau || '—'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <p className="societe-tab-empty">Aucun contact lié à cette société.</p>
-        )
+      {topTab === 'contacts' && initial && (
+        <SocieteContactsTab societeId={initial.IDSOCIETES} />
       )}
 
       {topTab === 'contrats' && initial && <SocieteContratsTab societeId={initial.IDSOCIETES} />}

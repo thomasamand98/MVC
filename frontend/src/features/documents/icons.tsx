@@ -157,6 +157,12 @@ export const RedoIcon = () => (
   </Icon>
 )
 
+export const CodeIcon = () => (
+  <Icon>
+    <path d="m9 8-4 4 4 4M15 8l4 4-4 4" />
+  </Icon>
+)
+
 export const CloseIcon = () => (
   <Icon strokeWidth={2}>
     <path d="M6 6l12 12M18 6 6 18" />

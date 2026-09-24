@@ -3,6 +3,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { PointageService } from './pointage.service.js';
 import type { CreatePointageDto, UpdatePointageDto } from './pointage.dto.js';
+import { parseProjection } from '../common/projection.js';
 
 @Controller()
 export class PointageController {
@@ -11,8 +12,8 @@ export class PointageController {
   // ?page=1&pageSize=25 : optionnels — omis, renvoie toute la table (comme
   // avant). Voir PointageService.getPointages pour le détail.
   @Get('pointage')
-  async getPointages(@Query('page') page?: string, @Query('pageSize') pageSize?: string) {
-    return this.pointageService.getPointages(page ? Number(page) : undefined, pageSize ? Number(pageSize) : undefined);
+  async getPointages(@Query('page') page?: string, @Query('pageSize') pageSize?: string, @Query('search') search?: string, @Query('via') via?: string, @Query('ids') ids?: string) {
+    return this.pointageService.getPointages(page ? Number(page) : undefined, pageSize ? Number(pageSize) : undefined, search, parseProjection(via, ids));
   }
 
   @Get('pointage/:id')

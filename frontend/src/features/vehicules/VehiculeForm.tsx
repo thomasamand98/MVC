@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import '../../components/PageActions.css'
 import type { VehiculeDetail } from './useVehicules.js'
 import type { Societe } from '../societes/useSocietes.js'
 
@@ -29,6 +30,9 @@ export type VehiculeDto = {
 
 type Props = {
   initial: VehiculeDetail | null
+  // Valeurs préremplies en création (projection depuis une seule ligne,
+  // voir components/projection/relations.ts) — ignorées en modification.
+  defaults?: Partial<VehiculeDto>
   // Liste des sociétés pour le sélecteur — chargée par VehiculesPage et
   // passée en prop plutôt que rechargée ici, pour ne pas refaire un GET
   // /societes à chaque ouverture de la modale.
@@ -51,7 +55,7 @@ function toDateInput(value: string | null | undefined): string {
 // VehiculesPage.tsx). `initial` vaut null en création, sinon la fiche
 // complète du véhicule (GET /vehicules/:id, voir useVehicules.ts) chargée
 // par CrudPage avant l'ouverture de la modale.
-export function VehiculeForm({ initial, societes, onSubmit, onCancel }: Props) {
+export function VehiculeForm({ initial, defaults, societes, onSubmit, onCancel }: Props) {
   const [form, setForm] = useState<VehiculeDto>({
     Type: initial?.Type ?? 0,
     Marque: initial?.Marque ?? '',
@@ -70,6 +74,7 @@ export function VehiculeForm({ initial, societes, onSubmit, onCancel }: Props) {
     Date_premiere_mise_en_circulation: toDateInput(initial?.Date_premiere_mise_en_circulation),
     Date_validite_tachygeaphe: toDateInput(initial?.Date_validite_tachygeaphe),
     Avec_compresseur: initial?.Avec_compresseur ?? 0,
+    ...(initial ? {} : defaults),
   })
   const [submitting, setSubmitting] = useState(false)
 
@@ -85,6 +90,10 @@ export function VehiculeForm({ initial, societes, onSubmit, onCancel }: Props) {
 
   return (
     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginBottom: '0.5rem' }}>
+        <button type="button" className="page-actions-button secondary" onClick={onCancel}>Annuler</button>
+        <button type="submit" className="page-actions-button primary" disabled={submitting}>{submitting ? 'Enregistrement...' : 'Enregistrer'}</button>
+      </div>
       <label style={fieldStyle}>
         N° d'immatriculation
         <input style={inputStyle} value={form.Num_immat} onChange={(e) => setForm({ ...form, Num_immat: e.target.value })} />
@@ -208,10 +217,6 @@ export function VehiculeForm({ initial, societes, onSubmit, onCancel }: Props) {
           <option value={1}>Oui</option>
         </select>
       </label>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.5rem' }}>
-        <button type="button" onClick={onCancel}>Annuler</button>
-        <button type="submit" disabled={submitting}>{submitting ? 'Enregistrement...' : 'Enregistrer'}</button>
-      </div>
     </form>
   )
 }

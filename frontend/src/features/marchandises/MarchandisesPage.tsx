@@ -4,13 +4,18 @@ import { columns } from './colums.js'
 import { CrudPage } from '../../components/CrudPage.js'
 import { MarchandiseForm, type MarchandiseDto } from './MarchandiseForm.js'
 import { useApiMutation } from '../../lib/useApiMutation.js'
+import { projectionFilters, type ProjectionView } from '../../components/projection/relations.js'
 
 const DEFAULT_PAGE_SIZE = 25
 
-export function MarchandisesPage() {
+// `projection` : page ouverte en résultat d'une projection (voir
+// components/projection/ProjectionProvider.tsx) — filtrée sur les lignes
+// d'origine, avec son propre en-tête.
+export function MarchandisesPage({ projection }: { projection?: ProjectionView } = {}) {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
-  const { marchandises, setMarchandises, loading, error, refetch, total } = useMarchandises({ page, pageSize })
+  const [search, setSearch] = useState('')
+  const { marchandises, setMarchandises, loading, error, refetch, total } = useMarchandises({ page, pageSize, search, filters: projectionFilters(projection) })
   const { get, create, update, remove } = useApiMutation<MarchandiseDto, Marchandise, MarchandiseDetail>('marchandises')
 
   return (
@@ -34,10 +39,15 @@ export function MarchandisesPage() {
         total,
         onPageChange: setPage,
         onPageSizeChange: (size) => { setPageSize(size); setPage(1) },
+        search,
+        onSearchChange: (value) => { setSearch(value); setPage(1) },
       }}
       deleteConfirmMessage="Supprimer cette marchandise ?"
       createModalTitle="Nouvelle marchandise"
       editModalTitle="Modifier la marchandise"
+      entity="marchandises"
+      heading={projection?.heading}
+      newRecordScope={projection ? `projection:${projection.source}:${projection.ids.join(',')}` : undefined}
       renderForm={({ initial, onSubmit, onCancel }) => (
         <MarchandiseForm initial={initial} onSubmit={onSubmit} onCancel={onCancel} />
       )}

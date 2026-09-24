@@ -31,6 +31,7 @@ import { TypeFactureModule } from './type-facture/type-facture.module.js';
 import { DocumentTemplateModule } from './document-template/document-template.module.js';
 import { DocumentMergeModule } from './document-merge/document-merge.module.js';
 import { AuthModule } from './auth/auth.module.js';
+import { MistralModule } from './mistral/mistral.module.js';
 import { AllExceptionsFilter } from './common/all-exceptions.filter.js';
 
 @Module({
@@ -61,6 +62,7 @@ import { AllExceptionsFilter } from './common/all-exceptions.filter.js';
     TypeFactureModule,
     DocumentTemplateModule,
     DocumentMergeModule,
+    MistralModule,
   ],
   providers: [{ provide: APP_FILTER, useClass: AllExceptionsFilter }],
 })

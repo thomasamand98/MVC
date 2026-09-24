@@ -4,9 +4,13 @@ import { features } from '../lib/tableFeatures.js'
 import { useTabsContext } from '../layout/TabsContext.js'
 import { DataTable } from './DataTable.js'
 import { PageActions } from './PageActions.js'
+import { TableSearch } from './TableSearch.js'
+import { ProjectionButton } from './projection/ProjectionButton.js'
+import { useProjection } from './projection/ProjectionContext.js'
+import { RELATIONS, type EntityKey } from './projection/relations.js'
 import { ROW_EXPAND_MODE_ID, RowFicheContent } from './view-modes/RowExpandMode.js'
 import { TAB_MODE_ID } from './view-modes/TabMode.js'
-import { useViewModePreference } from './view-modes/useViewModePreference.js'
+import { VIEW_MODE_SELECTION_ENABLED, useViewModePreference } from './view-modes/useViewModePreference.js'
 import { ViewModeSelector } from './view-modes/ViewModeSelector.js'
 import { viewModes } from './view-modes/index.js'
 import './CrudPage.css'
@@ -41,6 +45,10 @@ type PaginationProps = {
   total: number
   onPageChange: (page: number) => void
   onPageSizeChange: (pageSize: number) => void
+  // Recherche serveur sur toutes les colonnes texte (voir TableSearch.tsx et
+  // useApiList.ts) — fournir onSearchChange affiche le champ Rechercher.
+  search?: string
+  onSearchChange?: (search: string) => void
 }
 
 type Props<T extends RowData, TDto, TDetail> = {
@@ -75,6 +83,18 @@ type Props<T extends RowData, TDto, TDetail> = {
   // props additionnelles (ex. la liste des sociétés pour ContratForm/
   // PointForm) sans que CrudPage ait à les connaître.
   renderForm: (props: FormRenderProps<TDetail, TDto>) => ReactNode
+  // Distingue l'onglet de création quand plusieurs tables de la même entité
+  // coexistent avec des valeurs par défaut différentes (ex. onglet Contrats
+  // de chaque fiche Société, voir SocieteContratsTab.tsx) — sinon un seul
+  // onglet « Nouveau » par titre.
+  newRecordScope?: string
+  // Table affichée (voir projection/relations.ts) : active le bouton
+  // Projection vers ses tables liées.
+  entity?: EntityKey
+  // En-tête affiché à la place de `title` (ex. « Contrats de 3 sociétés »
+  // pour un résultat de projection) — `title` reste utilisé pour les
+  // identifiants d'onglet des fiches.
+  heading?: string
 }
 
 // Assemble le hook (données), le tableau et la modale de création/
@@ -101,24 +121,45 @@ export function CrudPage<T extends RowData, TDto, TDetail = T>({
   createModalTitle,
   editModalTitle,
   renderForm,
+  newRecordScope,
+  entity,
+  heading,
 }: Props<T, TDto, TDetail>) {
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set())
+  // Ligne ouverte en modification (double clic) — distincte de la sélection,
+  // qui peut contenir plusieurs lignes.
+  const [editId, setEditId] = useState<string | null>(null)
   const [modalMode, setModalMode] = useState<'create' | 'edit' | null>(null)
   const [editRecord, setEditRecord] = useState<TDetail | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
   const [viewModeId, setViewModeId] = useViewModePreference()
   const { openOrActivateTab, closeTab } = useTabsContext()
+  const projection = useProjection()
+  // Passe à true au premier chargement terminé : les rechargements suivants
+  // (page, recherche, après enregistrement) gardent la page affichée — sinon
+  // le champ Rechercher serait démonté à chaque frappe et perdrait le focus.
+  const [hasLoaded, setHasLoaded] = useState(false)
+  if (!loading && !hasLoaded) setHasLoaded(true)
 
-  if (loading) return <p>{loadingLabel}</p>
-  if (error) return <p>Erreur : {error}</p>
+  if (!hasLoaded) {
+    if (error) return <p>Erreur : {error}</p>
+    return <p>{loadingLabel}</p>
+  }
 
   const isTabMode = viewModeId === TAB_MODE_ID
+
+  // Ne garde que les ids encore présents dans `data` — une ligne sélectionnée
+  // peut disparaître (changement de page, rechargement serveur) sans que
+  // la sélection ne soit remise à zéro explicitement.
+  const loadedIds = new Set(data.map(getRowId))
+  const selection = new Set([...selectedIds].filter((id) => loadedIds.has(id)))
 
   // Mode "Onglet" (voir view-modes/TabMode.tsx) : un id stable par
   // enregistrement, pour réactiver son onglet plutôt que d'en rouvrir un
   // second au redouble-clic.
   function recordTabId(recordId: string | null): string {
-    return recordId ? `record:${title}:${recordId}` : `record:${title}:new`
+    if (recordId) return `record:${title}:${recordId}`
+    return newRecordScope ? `record:${title}:new:${newRecordScope}` : `record:${title}:new`
   }
 
   // Libellé de l'onglet d'une ligne : nom de la page + valeur de la
@@ -181,10 +222,6 @@ export function CrudPage<T extends RowData, TDto, TDetail = T>({
     }
   }
 
-  function handleRowClick(row: T) {
-    setSelectedId(getRowId(row))
-  }
-
   async function handleRowDoubleClick(row: T) {
     if (isTabMode) {
       await handleRowDoubleClickTab(row)
@@ -192,7 +229,8 @@ export function CrudPage<T extends RowData, TDto, TDetail = T>({
     }
     if (detailLoading) return
     const id = getRowId(row)
-    setSelectedId(id)
+    setSelectedIds(new Set([id]))
+    setEditId(id)
     if (!getDetail) {
       // Pas de fiche détaillée à charger : la ligne du tableau sert
       // directement de valeurs initiales (TDetail vaut T par défaut).
@@ -211,30 +249,44 @@ export function CrudPage<T extends RowData, TDto, TDetail = T>({
     }
   }
 
+  // Supprime toutes les lignes sélectionnées, une requête par ligne. Les
+  // échecs (ex. ligne encore référencée ailleurs) n'empêchent pas les
+  // autres suppressions : les lignes en échec restent sélectionnées.
   async function handleDelete() {
-    if (!selectedId) return
-    if (!confirm(deleteConfirmMessage)) return
-    try {
-      await remove(selectedId)
+    const ids = [...selection]
+    if (ids.length === 0) return
+    const message = ids.length === 1 ? deleteConfirmMessage : `Supprimer les ${ids.length} éléments sélectionnés ?`
+    if (!confirm(message)) return
+    const results = await Promise.allSettled(ids.map((id) => remove(id)))
+    const deleted = new Set(ids.filter((_, i) => results[i].status === 'fulfilled'))
+    const failures = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected')
+    if (deleted.size > 0) {
       if (pagination && refetch) {
         await refetch()
       } else {
-        setData((prev) => prev.filter((row) => getRowId(row) !== selectedId))
+        setData((prev) => prev.filter((row) => !deleted.has(getRowId(row))))
       }
-      setSelectedId(null)
-    } catch (err) {
-      alert(`Échec de la suppression : ${err instanceof Error ? err.message : 'erreur inconnue'}`)
+    }
+    setSelectedIds(new Set(ids.filter((id) => !deleted.has(id))))
+    if (failures.length > 0) {
+      const reason = failures[0].reason
+      const detail = reason instanceof Error ? reason.message : 'erreur inconnue'
+      alert(
+        ids.length === 1
+          ? `Échec de la suppression : ${detail}`
+          : `${failures.length} suppression(s) sur ${ids.length} ont échoué : ${detail}`
+      )
     }
   }
 
   async function handleSubmit(dto: TDto) {
     try {
-      if (modalMode === 'edit' && selectedId) {
-        const updated = await update(selectedId, dto)
+      if (modalMode === 'edit' && editId) {
+        const updated = await update(editId, dto)
         if (pagination && refetch) {
           await refetch()
         } else {
-          setData((prev) => prev.map((row) => (getRowId(row) === selectedId ? updated : row)))
+          setData((prev) => prev.map((row) => (getRowId(row) === editId ? updated : row)))
         }
       } else {
         const created = await create(dto)
@@ -268,15 +320,19 @@ export function CrudPage<T extends RowData, TDto, TDetail = T>({
 
   const tableArea = (
     <>
+      {error && <p className="crud-page-error">Erreur : {error}</p>}
       <DataTable
         data={data}
         columns={columns}
         getRowId={getRowId}
-        selectedRowId={selectedId}
-        onRowClick={handleRowClick}
+        selectedRowIds={selection}
+        onSelectionChange={setSelectedIds}
         onRowDoubleClick={handleRowDoubleClick}
         exportFileName={title}
-        expandedRowId={isRowExpandMode && modalMode === 'edit' ? selectedId : null}
+        toolbarStart={
+          pagination?.onSearchChange && <TableSearch value={pagination.search ?? ''} onChange={pagination.onSearchChange} />
+        }
+        expandedRowId={isRowExpandMode && modalMode === 'edit' ? editId : null}
         renderExpandedRow={
           isRowExpandMode && modalMode === 'edit'
             ? () => (
@@ -340,21 +396,38 @@ export function CrudPage<T extends RowData, TDto, TDetail = T>({
   return (
     <div>
       <div className="page-header">
-        <h2>{title} ({totalCount})</h2>
+        <h2>{heading ?? title} ({totalCount})</h2>
         <div className="page-header-actions">
-          <ViewModeSelector value={viewModeId} onChange={setViewModeId} />
+          {VIEW_MODE_SELECTION_ENABLED && <ViewModeSelector value={viewModeId} onChange={setViewModeId} />}
           <PageActions
             onCreate={() => {
               if (isTabMode) {
                 openRecordTab('create', null, null, createModalTitle)
                 return
               }
-              setSelectedId(null)
+              setSelectedIds(new Set())
+              setEditId(null)
               setModalMode('create')
             }}
+            onEdit={() => {
+              const [id] = selection
+              const row = data.find((r) => getRowId(r) === id)
+              if (row) void handleRowDoubleClick(row)
+            }}
             onDelete={handleDelete}
-            deleteDisabled={!selectedId}
+            selectedCount={selection.size}
           />
+          {entity && projection && RELATIONS[entity].length > 0 && (
+            <ProjectionButton
+              relations={RELATIONS[entity]}
+              selectedCount={selection.size}
+              onSelect={(target) => {
+                const ids = [...selection]
+                const single = ids.length === 1 ? data.find((row) => getRowId(row) === ids[0]) : undefined
+                projection.openProjection({ source: entity, target, ids, singleLabel: single ? getRowLabel(single) : undefined })
+              }}
+            />
+          )}
         </div>
       </div>
       <ModeComponent

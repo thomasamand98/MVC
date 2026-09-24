@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import '../../components/PageActions.css'
 import type { PointDetail } from './usePoints.js'
 import type { Societe } from '../societes/useSocietes.js'
 
@@ -20,6 +21,9 @@ export type PointDto = {
 
 type Props = {
   initial: PointDetail | null
+  // Valeurs préremplies en création (projection depuis une seule ligne,
+  // voir components/projection/relations.ts) — ignorées en modification.
+  defaults?: Partial<PointDto>
   // Liste des sociétés pour le sélecteur — chargée par PointsPage et
   // passée en prop plutôt que rechargée ici, pour ne pas refaire un GET
   // /societes à chaque ouverture de la modale.
@@ -37,7 +41,7 @@ const inputStyle = { padding: '0.4rem 0.5rem', border: '1px solid var(--border)'
 // l'ouverture de la modale. IDADRESSES/IDCONTACTS_DEFAUTS n'ont pas de
 // sélecteur dédié (pas de feature Adresses) — saisis comme identifiants
 // bruts.
-export function PointForm({ initial, societes, onSubmit, onCancel }: Props) {
+export function PointForm({ initial, defaults, societes, onSubmit, onCancel }: Props) {
   const [form, setForm] = useState<PointDto>({
     Libelle: initial?.Libelle ?? '',
     Nom_societe: initial?.Nom_societe ?? '',
@@ -48,6 +52,7 @@ export function PointForm({ initial, societes, onSubmit, onCancel }: Props) {
     Lien_googleMap: initial?.Lien_googleMap ?? '',
     Instruction: initial?.Instruction ?? '',
     IDCONTACTS_DEFAUTS: initial?.IDCONTACTS_DEFAUTS ?? '',
+    ...(initial ? {} : defaults),
   })
   const [submitting, setSubmitting] = useState(false)
 
@@ -63,6 +68,10 @@ export function PointForm({ initial, societes, onSubmit, onCancel }: Props) {
 
   return (
     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginBottom: '0.5rem' }}>
+        <button type="button" className="page-actions-button secondary" onClick={onCancel}>Annuler</button>
+        <button type="submit" className="page-actions-button primary" disabled={submitting}>{submitting ? 'Enregistrement...' : 'Enregistrer'}</button>
+      </div>
       <label style={fieldStyle}>
         Nom
         <input style={inputStyle} value={form.Libelle} onChange={(e) => setForm({ ...form, Libelle: e.target.value })} />
@@ -139,10 +148,6 @@ export function PointForm({ initial, societes, onSubmit, onCancel }: Props) {
           </ul>
         </div>
       )}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.5rem' }}>
-        <button type="button" onClick={onCancel}>Annuler</button>
-        <button type="submit" disabled={submitting}>{submitting ? 'Enregistrement...' : 'Enregistrer'}</button>
-      </div>
     </form>
   )
 }

@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import '../../components/PageActions.css'
 import type { Attelage } from './useAttelages.js'
 import type { Chauffeur } from '../chauffeurs/useChauffeurs.js'
 import type { Vehicule } from '../vehicules/useVehicules.js'
@@ -18,6 +19,9 @@ export type AttelageDto = {
 
 type Props = {
   initial: Attelage | null
+  // Valeurs préremplies en création (projection depuis une seule ligne,
+  // voir components/projection/relations.ts) — ignorées en modification.
+  defaults?: Partial<AttelageDto>
   // Listes chargées par AttelagesPage et passées en props pour les
   // sélecteurs Chauffeur/Tracteur/Remorque — évite de les recharger à
   // chaque ouverture de la modale.
@@ -41,7 +45,7 @@ function toDateInput(value: string | null | undefined): string {
 // AttelagesPage.tsx). `initial` vaut null en création, sinon pré-remplit les
 // champs avec la ligne cliquée dans le tableau. IDPERSONNELS n'a pas de
 // sélecteur dédié ici — saisi comme identifiant brut.
-export function AttelageForm({ initial, chauffeurs, vehicules, onSubmit, onCancel }: Props) {
+export function AttelageForm({ initial, defaults, chauffeurs, vehicules, onSubmit, onCancel }: Props) {
   const [form, setForm] = useState<AttelageDto>({
     IDCHAUFFEUR: initial?.IDCHAUFFEUR ?? '',
     IDTRACTEUR: initial?.IDTRACTEUR ?? '',
@@ -49,6 +53,7 @@ export function AttelageForm({ initial, chauffeurs, vehicules, onSubmit, onCance
     IDPERSONNELS: initial?.IDPERSONNELS ?? '',
     Date_debut: toDateInput(initial?.Date_debut),
     Date_fin: toDateInput(initial?.Date_fin),
+    ...(initial ? {} : defaults),
   })
   const [submitting, setSubmitting] = useState(false)
 
@@ -64,6 +69,10 @@ export function AttelageForm({ initial, chauffeurs, vehicules, onSubmit, onCance
 
   return (
     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginBottom: '0.5rem' }}>
+        <button type="button" className="page-actions-button secondary" onClick={onCancel}>Annuler</button>
+        <button type="submit" className="page-actions-button primary" disabled={submitting}>{submitting ? 'Enregistrement...' : 'Enregistrer'}</button>
+      </div>
       <label style={fieldStyle}>
         Chauffeur
         <select style={inputStyle} value={form.IDCHAUFFEUR} onChange={(e) => setForm({ ...form, IDCHAUFFEUR: e.target.value })}>
@@ -103,10 +112,6 @@ export function AttelageForm({ initial, chauffeurs, vehicules, onSubmit, onCance
         Fin
         <input type="date" style={inputStyle} value={form.Date_fin} onChange={(e) => setForm({ ...form, Date_fin: e.target.value })} />
       </label>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.5rem' }}>
-        <button type="button" onClick={onCancel}>Annuler</button>
-        <button type="submit" disabled={submitting}>{submitting ? 'Enregistrement...' : 'Enregistrer'}</button>
-      </div>
     </form>
   )
 }

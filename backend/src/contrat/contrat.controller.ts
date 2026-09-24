@@ -5,6 +5,7 @@ import type { Response } from 'express';
 import { ContratService } from './contrat.service.js';
 import type { CreateContratDto, UpdateContratDto } from './contrat.dto.js';
 import { DocumentMergeService } from '../document-merge/document-merge.service.js';
+import { parseProjection } from '../common/projection.js';
 
 @Controller()
 export class ContratController {
@@ -17,8 +18,8 @@ export class ContratController {
   // avant). ?societeId=X : optionnel, ne renvoie que les contrats de cette
   // société. Voir ContratService.getContrats pour le détail.
   @Get('contrats')
-  async getContrats(@Query('page') page?: string, @Query('pageSize') pageSize?: string, @Query('societeId') societeId?: string) {
-    return this.contratService.getContrats(page ? Number(page) : undefined, pageSize ? Number(pageSize) : undefined, societeId);
+  async getContrats(@Query('page') page?: string, @Query('pageSize') pageSize?: string, @Query('societeId') societeId?: string, @Query('search') search?: string, @Query('via') via?: string, @Query('ids') ids?: string) {
+    return this.contratService.getContrats(page ? Number(page) : undefined, pageSize ? Number(pageSize) : undefined, societeId, search, parseProjection(via, ids));
   }
 
   @Get('contrats/:id')

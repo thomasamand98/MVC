@@ -4,6 +4,8 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { buildSearchWhere } from '../common/search.js';
+import { andWhere, projectionWhere, type Projection, type ProjectionMap } from '../common/projection.js';
 import { serializeBigInt } from '../prisma/serialize-bigint.js';
 import { CreateChauffeurDto, UpdateChauffeurDto } from './chauffeur.dto.js';
 
@@ -23,6 +25,14 @@ export const chauffeurSelect = {
   Personnel: { select: { Nom_Personnel: true, Prenom_Personnel: true } },
 } satisfies Prisma.ChauffeurSelect;
 
+// Projection (voir common/projection.ts) : pour chaque table source, les
+// lignes de cette table liées aux ids sélectionnés.
+const chauffeurProjections: ProjectionMap<Prisma.ChauffeurWhereInput> = {
+  societes: (ids) => ({ IDSOCIETES: { in: ids } }),
+  personnel: (ids) => ({ IDPERSONNELS: { in: ids } }),
+  attelages: (ids) => ({ Attelages: { some: { IDATTELAGE: { in: ids } } } }),
+};
+
 @Injectable()
 export class ChauffeurService {
   constructor(private readonly prisma: PrismaService) {}
@@ -31,15 +41,25 @@ export class ChauffeurService {
   // table). Fournis, la requête est découpée avec skip/take et `total`
   // (nombre total de lignes, pas juste celles de la page) est renvoyé à
   // côté pour que le frontend puisse calculer le nombre de pages.
-  async getChauffeurs(page?: number, pageSize?: number) {
+  async getChauffeurs(page?: number, pageSize?: number, search?: string, projection?: Projection) {
     const paginate = page !== undefined && pageSize !== undefined && pageSize > 0;
+    const filterWhere = buildSearchWhere<Prisma.ChauffeurWhereInput>(search, (c) => [
+      { Nom_chauffeur: c },
+      { Categorie: c },
+      { Telephone: c },
+      { Societe: { Nom_societe: c } },
+      { Personnel: { Nom_Personnel: c } },
+      { Personnel: { Prenom_Personnel: c } },
+    ]);
+    const where = andWhere<Prisma.ChauffeurWhereInput>(filterWhere, projectionWhere(chauffeurProjections, projection));
     const [chauffeurs, total] = await Promise.all([
       this.prisma.chauffeur.findMany({
+        where,
         orderBy: { IDCHAUFFEURS: 'asc' },
         select: chauffeurSelect,
         ...(paginate ? { skip: (page - 1) * pageSize, take: pageSize } : {}),
       }),
-      this.prisma.chauffeur.count(),
+      this.prisma.chauffeur.count({ where }),
     ]);
     return { chauffeurs: serializeBigInt(chauffeurs), total };
   }

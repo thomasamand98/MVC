@@ -3,6 +3,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { PointService } from './point.service.js';
 import type { CreatePointDto, UpdatePointDto } from './point.dto.js';
+import { parseProjection } from '../common/projection.js';
 
 @Controller()
 export class PointController {
@@ -11,8 +12,8 @@ export class PointController {
   // ?page=1&pageSize=25 : optionnels — omis, renvoie toute la table (comme
   // avant). Voir PointService.getPoints pour le détail.
   @Get('points')
-  async getPoints(@Query('page') page?: string, @Query('pageSize') pageSize?: string) {
-    return this.pointService.getPoints(page ? Number(page) : undefined, pageSize ? Number(pageSize) : undefined);
+  async getPoints(@Query('page') page?: string, @Query('pageSize') pageSize?: string, @Query('search') search?: string, @Query('via') via?: string, @Query('ids') ids?: string) {
+    return this.pointService.getPoints(page ? Number(page) : undefined, pageSize ? Number(pageSize) : undefined, search, parseProjection(via, ids));
   }
 
   @Get('points/:id')

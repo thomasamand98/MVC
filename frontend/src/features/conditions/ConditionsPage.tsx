@@ -10,7 +10,8 @@ const DEFAULT_PAGE_SIZE = 25
 export function ConditionsPage() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
-  const { conditions, setConditions, loading, error, refetch, total } = useConditions({ page, pageSize })
+  const [search, setSearch] = useState('')
+  const { conditions, setConditions, loading, error, refetch, total } = useConditions({ page, pageSize, search })
   const { create, update, remove } = useApiMutation<ConditionDto, Condition>('conditions')
 
   return (
@@ -33,6 +34,8 @@ export function ConditionsPage() {
         total,
         onPageChange: setPage,
         onPageSizeChange: (size) => { setPageSize(size); setPage(1) },
+        search,
+        onSearchChange: (value) => { setSearch(value); setPage(1) },
       }}
       deleteConfirmMessage="Supprimer cette condition d'exécution ?"
       createModalTitle="Nouvelle condition"

@@ -1,58 +1,77 @@
-import { useEffect, useState } from 'react'
-import { apiJson } from '../../lib/api.js'
+import { useState } from 'react'
+import { useContrats, type Contrat, type ContratDetail } from '../contrats/useContrats.js'
+import { columns as contratColumns } from '../contrats/colums.js'
+import { ContratForm, type ContratDto } from '../contrats/ContratForm.js'
+import { useTypesFacture } from '../contrats/useTypesFacture.js'
+import { useDocumentTemplates } from '../documents/useDocumentTemplates.js'
+import { CrudPage } from '../../components/CrudPage.js'
+import { useApiMutation } from '../../lib/useApiMutation.js'
+import { useSocietes } from './useSocietes.js'
 
-type ContratRow = {
-  IDCONTRATS: string
-  Num_contrat: string | null
-  Description_projet: string | null
-  Date_debut: string | null
-  Date_fin: string | null
-}
+const DEFAULT_PAGE_SIZE = 25
+
+// Colonnes de la page Contrats, sans Société/N° TVA : toujours la société
+// de la fiche ici.
+const columns = contratColumns.filter((column) => column.id !== 'societe' && column.id !== 'numero_tva')
 
 type Props = {
   societeId: string
 }
 
-function toDateLabel(value: string | null): string {
-  return value ? value.slice(0, 10) : '—'
-}
-
-// Onglet « Contrats / Offres » de la fiche Société (SocieteForm.tsx) —
-// lecture seule, les contrats se gèrent depuis leur propre page (menu
-// Commercial > Contrats / Offre de prix).
+// Onglet « Contrats / Offres » de la fiche Société (SocieteForm.tsx) : la
+// même table que la page Contrats (recherche, filtres, export, Nouveau/
+// Modifier/Supprimer), limitée aux contrats de cette société — « Nouveau »
+// ouvre la fiche contrat avec la société déjà sélectionnée.
 export function SocieteContratsTab({ societeId }: Props) {
-  const [contrats, setContrats] = useState<ContratRow[] | null>(null)
-
-  useEffect(() => {
-    setContrats(null)
-    apiJson<{ contrats: ContratRow[] }>(`contrats?societeId=${encodeURIComponent(societeId)}`)
-      .then((json) => setContrats(json.contrats))
-      .catch(() => setContrats([]))
-  }, [societeId])
-
-  if (contrats === null) return <p className="societe-tab-loading">Chargement...</p>
-  if (contrats.length === 0) return <p className="societe-tab-empty">Aucun contrat lié à cette société.</p>
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
+  const [search, setSearch] = useState('')
+  const { contrats, setContrats, loading, error, refetch, total } = useContrats({ page, pageSize, search, filters: { societeId } })
+  const { get, create, update, remove } = useApiMutation<ContratDto, Contrat, ContratDetail>('contrats')
+  const { societes } = useSocietes()
+  const typesFacture = useTypesFacture()
+  const { templates: documentTemplates } = useDocumentTemplates('CONTRAT')
 
   return (
-    <table className="societe-tab-table">
-      <thead>
-        <tr>
-          <th>Numéro</th>
-          <th>Description</th>
-          <th>Début</th>
-          <th>Fin</th>
-        </tr>
-      </thead>
-      <tbody>
-        {contrats.map((c) => (
-          <tr key={c.IDCONTRATS}>
-            <td>{c.Num_contrat || '—'}</td>
-            <td>{c.Description_projet || '—'}</td>
-            <td>{toDateLabel(c.Date_debut)}</td>
-            <td>{toDateLabel(c.Date_fin)}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    <CrudPage<Contrat, ContratDto, ContratDetail>
+      title="Contrats"
+      loadingLabel="Chargement des contrats..."
+      data={contrats}
+      setData={setContrats}
+      loading={loading}
+      error={error}
+      columns={columns}
+      getRowId={(c) => c.IDCONTRATS}
+      create={create}
+      update={update}
+      remove={remove}
+      getDetail={get}
+      refetch={refetch}
+      pagination={{
+        page,
+        pageSize,
+        total,
+        onPageChange: setPage,
+        onPageSizeChange: (size) => { setPageSize(size); setPage(1) },
+        search,
+        onSearchChange: (value) => { setSearch(value); setPage(1) },
+      }}
+      deleteConfirmMessage="Supprimer ce contrat ?"
+      createModalTitle="Nouveau contrat"
+      editModalTitle="Modifier le contrat"
+      entity="contrats"
+      newRecordScope={`societe:${societeId}`}
+      renderForm={({ initial, onSubmit, onCancel }) => (
+        <ContratForm
+          initial={initial}
+          societes={societes}
+          typesFacture={typesFacture}
+          documentTemplates={documentTemplates}
+          defaultSocieteId={societeId}
+          onSubmit={onSubmit}
+          onCancel={onCancel}
+        />
+      )}
+    />
   )
 }
