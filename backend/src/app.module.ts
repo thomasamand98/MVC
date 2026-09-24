@@ -19,6 +19,7 @@ import { ChauffeurModule } from './chauffeur/chauffeur.module.js';
 import { VehiculeModule } from './vehicule/vehicule.module.js';
 import { AttelageModule } from './attelage/attelage.module.js';
 import { CommandeModule } from './commande/commande.module.js';
+import { PlanningModule } from './planning/planning.module.js';
 import { PersonnelModule } from './personnel/personnel.module.js';
 import { PointageModule } from './pointage/pointage.module.js';
 import { EntiteModule } from './entite/entite.module.js';
@@ -51,6 +52,7 @@ import { AllExceptionsFilter } from './common/all-exceptions.filter.js';
     VehiculeModule,
     AttelageModule,
     CommandeModule,
+    PlanningModule,
     PersonnelModule,
     PointageModule,
     EntiteModule,

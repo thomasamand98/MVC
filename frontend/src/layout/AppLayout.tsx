@@ -26,6 +26,7 @@ import { ChauffeursPage } from '../features/chauffeurs/ChauffeursPage.js'
 import { VehiculesPage } from '../features/vehicules/VehiculesPage.js'
 import { AttelagesPage } from '../features/attelages/AttelagesPage.js'
 import { CommandesPage } from '../features/commandes/CommandesPage.js'
+import { PlanningPage } from '../features/planning/PlanningPage.js'
 import { PersonnelPage } from '../features/personnel/PersonnelPage.js'
 import { PointagePage } from '../features/pointage/PointagePage.js'
 import { EntitePage } from '../features/entite/EntitePage.js'
@@ -73,7 +74,7 @@ const MENU: (MenuLeafConfig | MenuGroupConfig)[] = [
     icon: <ProductionIcon />,
     items: [
       { id: 'commandes', label: 'Commandes', render: () => <CommandesPage /> },
-      { id: 'planning', label: 'Planning', render: () => <Dev /> },
+      { id: 'planning', label: 'Planning', render: () => <PlanningPage /> },
       { id: 'executions', label: 'Exécutions', render: () => <Dev /> },
     ]
   },
