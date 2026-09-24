@@ -34,15 +34,18 @@ $ npm install
 ## Compile and run the project
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
+# development (watch mode)
 $ npm run start:dev
 
-# production mode
-$ npm run start:prod
+# production: compile once, then run the compiled app
+$ npm run build
+$ npm run start       # node dist/main
+$ npm run start:prod  # applies pending migrations, then node dist/main
 ```
+
+`npm run start` runs the compiled output, not `nest start`: compiling the
+TypeScript (including the large generated Prisma client) needs more than
+400 MB of memory and crashes small containers when done at startup.
 
 ## Run tests
 

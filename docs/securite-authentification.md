@@ -266,6 +266,17 @@ Vite ou rebuilder. `LoginPage` est alors affiché à la place de la session auto
 
 ### Railway
 
+Build et démarrage du back sont fixés dans [`backend/railway.json`](../backend/railway.json)
+(`npm run build`, puis `npm run start:prod` : migrations puis `node dist/main`).
+Ce fichier ne suit pas le *Root Directory* : dans les réglages du service back,
+indiquer **Root Directory** = `/backend` et **Railway Config File** =
+`/backend/railway.json`. Sans lui, la commande par défaut `npm start` lance
+aussi l’application compilée (sans les migrations).
+
+Ne jamais démarrer le back avec `nest start` en production : la compilation
+au démarrage dépasse la mémoire du conteneur (`JavaScript heap out of memory`,
+réponse 502).
+
 1. Définir `JWT_SECRET` (32 caractères ou plus) dans les variables du service back.
 2. Définir `CORS_ORIGIN` avec l'adresse **exacte** du front.
 3. Si le front et l'API sont sur des **domaines différents** (deux sous-domaines
