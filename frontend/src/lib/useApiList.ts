@@ -36,19 +36,24 @@ export function useApiList<T>(endpoint: string, pagination?: ApiListPagination) 
   // Sérialisé pour servir de dépendance stable : un objet `filters` recréé à
   // chaque rendu ne doit pas relancer la requête.
   const filtersKey = JSON.stringify(pagination?.filters ?? {})
+  // Valeurs primitives plutôt que l'objet `pagination`, recréé à chaque rendu.
+  const paginated = pagination !== undefined
+  const page = pagination?.page
+  const pageSize = pagination?.pageSize
+  const searchTerm = pagination?.search
 
   const refetch = useCallback(() => {
     const requestId = ++lastRequest.current
     setLoading(true)
     setError(null)
     let query = ''
-    if (pagination) {
+    if (paginated) {
       const params = new URLSearchParams({
-        page: String(pagination.page),
-        pageSize: String(pagination.pageSize),
+        page: String(page),
+        pageSize: String(pageSize),
         ...(JSON.parse(filtersKey) as Record<string, string>),
       })
-      const search = pagination.search?.trim()
+      const search = searchTerm?.trim()
       if (search) params.set('search', search)
       query = `?${params.toString()}`
     }
@@ -64,7 +69,7 @@ export function useApiList<T>(endpoint: string, pagination?: ApiListPagination) 
       .finally(() => {
         if (requestId === lastRequest.current) setLoading(false)
       })
-  }, [endpoint, pagination?.page, pagination?.pageSize, pagination?.search, filtersKey])
+  }, [endpoint, paginated, page, pageSize, searchTerm, filtersKey])
 
   useEffect(() => {
     refetch()

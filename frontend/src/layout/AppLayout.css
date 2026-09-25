@@ -43,3 +43,9 @@
     left: 1rem;
   }
 }
+
+.app-content-loading {
+  padding: 2rem;
+  text-align: center;
+  color: var(--text);
+}

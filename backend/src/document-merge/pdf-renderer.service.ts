@@ -102,6 +102,17 @@ export class PdfRendererService implements OnModuleDestroy {
     const browser = await this.getBrowser();
     const page = await browser.newPage();
     try {
+      // Le HTML d'un modèle est saisi par les utilisateurs : il ne doit ni
+      // exécuter de script, ni faire charger quoi que ce soit au serveur
+      // (sinon une <iframe>/<img> vers une adresse interne se retrouverait
+      // imprimée dans le PDF). Seules les data: URI (logos) passent.
+      await page.setJavaScriptEnabled(false);
+      await page.setRequestInterception(true);
+      page.on('request', (request) => {
+        const url = request.url();
+        if (url.startsWith('data:') || url === 'about:blank') void request.continue();
+        else void request.abort('blockedbyclient');
+      });
       const document = `<!doctype html><html><head><meta charset="utf-8"><style>${BODY_STYLESHEET}</style></head><body>${bodyHtml}</body></html>`;
       await page.setContent(document, { waitUntil: 'load' });
       const pdf = await page.pdf({

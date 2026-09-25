@@ -3,6 +3,7 @@ import { MergeFieldPalette } from './MergeFieldPalette.js'
 import { EditorToolbar } from './EditorToolbar.js'
 import { findFieldByPath, findGroupById, type MergeField, type MergeFieldGroup } from './mergeFields.js'
 import { DRAG_MIME, createChipElement, createRepeatBlockElement, insertBlockNode, insertInlineNodeAtRange, rangeFromPoint, type DragPayload } from './domInsert.js'
+import { sanitizeTemplateHtml } from './sanitizeTemplateHtml.js'
 import './DocumentTemplateEditor.css'
 import { useLeaveGuard } from '../../components/unsaved-changes/UnsavedChangesContext.js'
 
@@ -56,9 +57,9 @@ export function DocumentTemplateEditor({ initial, onSave, onCancel, saving }: Pr
   // doit remonter ce composant avec une `key` différente plutôt que de
   // changer `initial` en place.
   useEffect(() => {
-    if (canvasRefs.current.header) canvasRefs.current.header.innerHTML = initial.headerHtml
-    if (canvasRefs.current.content) canvasRefs.current.content.innerHTML = initial.contentHtml
-    if (canvasRefs.current.footer) canvasRefs.current.footer.innerHTML = initial.footerHtml
+    if (canvasRefs.current.header) canvasRefs.current.header.innerHTML = sanitizeTemplateHtml(initial.headerHtml)
+    if (canvasRefs.current.content) canvasRefs.current.content.innerHTML = sanitizeTemplateHtml(initial.contentHtml)
+    if (canvasRefs.current.footer) canvasRefs.current.footer.innerHTML = sanitizeTemplateHtml(initial.footerHtml)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -94,7 +95,7 @@ export function DocumentTemplateEditor({ initial, onSave, onCancel, saving }: Pr
   function flushCodeZone() {
     if (!codeZone) return
     const canvas = canvasRefs.current[codeZone]
-    if (canvas) canvas.innerHTML = codeHtml
+    if (canvas) canvas.innerHTML = sanitizeTemplateHtml(codeHtml)
     setCodeZone(null)
   }
 
@@ -341,9 +342,9 @@ export function DocumentTemplateEditor({ initial, onSave, onCancel, saving }: Pr
   function handleReset() {
     if (!window.confirm('Réinitialiser le modèle avec la mise en page de départ ? Les modifications non enregistrées seront perdues.')) return
     setCodeZone(null)
-    if (canvasRefs.current.header) canvasRefs.current.header.innerHTML = initial.headerHtml
-    if (canvasRefs.current.content) canvasRefs.current.content.innerHTML = initial.contentHtml
-    if (canvasRefs.current.footer) canvasRefs.current.footer.innerHTML = initial.footerHtml
+    if (canvasRefs.current.header) canvasRefs.current.header.innerHTML = sanitizeTemplateHtml(initial.headerHtml)
+    if (canvasRefs.current.content) canvasRefs.current.content.innerHTML = sanitizeTemplateHtml(initial.contentHtml)
+    if (canvasRefs.current.footer) canvasRefs.current.footer.innerHTML = sanitizeTemplateHtml(initial.footerHtml)
     markDirty()
   }
 

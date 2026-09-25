@@ -1,6 +1,5 @@
 import { Fragment, useState, type MouseEvent, type ReactNode } from 'react'
 import { useTable, type ColumnDef, type RowData } from '@tanstack/react-table'
-import * as XLSX from 'xlsx'
 import { features } from '../lib/tableFeatures.js'
 import './DataTable.css'
 
@@ -120,8 +119,9 @@ export function DataTable<T extends RowData>({ data, columns, getRowId, selected
 
   // Exporte les lignes telles qu'affichées (triées/filtrées) plutôt que
   // `data` brute, en réutilisant les libellés de colonne déjà utilisés pour
-  // l'affichage (voir data-label plus bas).
-  function handleExportExcel() {
+  // l'affichage (voir data-label plus bas). La lib xlsx (~400 kB) n'est
+  // chargée qu'au premier export, pas avec le reste de l'application.
+  async function handleExportExcel() {
     const rows = table.getRowModel().rows.map((row) =>
       Object.fromEntries(
         row.getAllCells().map((cell) => {
@@ -131,6 +131,7 @@ export function DataTable<T extends RowData>({ data, columns, getRowId, selected
         })
       )
     )
+    const XLSX = await import('xlsx')
     const worksheet = XLSX.utils.json_to_sheet(rows)
     const workbook = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Données')
@@ -141,7 +142,7 @@ export function DataTable<T extends RowData>({ data, columns, getRowId, selected
     <div className="data-table">
       <div className="data-table-toolbar">
         {toolbarStart}
-        <button type="button" className="btn sm data-table-export-button" onClick={handleExportExcel}>
+        <button type="button" className="btn sm data-table-export-button" onClick={() => void handleExportExcel()}>
           <ExcelIcon />
           Exporter
         </button>

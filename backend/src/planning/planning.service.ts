@@ -174,8 +174,7 @@ export class PlanningService {
 
   // Déplacement ou redimensionnement d'une carte : nouvelles dates, et
   // nouvelle ligne (chauffeur ou remorque) si elle a changé.
-  async moveExecution(idRaw: string, dto: MovePlanningExecutionDto) {
-    const id = parseId(idRaw);
+  async moveExecution(id: bigint, dto: MovePlanningExecutionDto) {
     const start = parseDate(dto.start, 'start');
     const end = parseDate(dto.end, 'end');
     if (end <= start) throw new BadRequestException("La fin de l'exécution doit être après son début.");
@@ -259,8 +258,7 @@ export class PlanningService {
 
   // « Retirer du planning » : supprime l'exécution et libère l'unité
   // correspondante sur la commande.
-  async deleteExecution(idRaw: string) {
-    const id = parseId(idRaw);
+  async deleteExecution(id: bigint) {
     await this.prisma.$transaction(async (tx) => {
       const existing = await tx.execution.findUnique({
         where: { IDEXECUTIONS: id },

@@ -1,22 +1,7 @@
 import { addDays, daysInRange, formatWeekday, fromInputValue, toInputValue } from '../features/planning/dateUtils.js'
+import { todayPeriod, type Period } from '../lib/period.js'
 import { ChevronLeftIcon, ChevronRightIcon } from '../features/planning/icons.js'
 import './PeriodFilter.css'
-
-// Période d'une liste, en jours « AAAA-MM-JJ » (bornes incluses) — envoyée
-// telle quelle en ?from=&to= (voir parsePeriod, backend/src/common/params.ts).
-// null = toutes les dates.
-export type Period = { from: string; to: string } | null
-
-// Période d'un seul jour : aujourd'hui.
-export function todayPeriod(): Period {
-  const today = toInputValue(new Date())
-  return { from: today, to: today }
-}
-
-// Filtres ?from=&to= à passer au hook de la liste (voir useApiList.ts).
-export function periodFilters(period: Period): Record<string, string> {
-  return period ? { from: period.from, to: period.to } : {}
-}
 
 type Props = {
   value: Period

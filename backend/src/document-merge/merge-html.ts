@@ -68,17 +68,31 @@ function resolvePath(scopes: Scope[], path: string): unknown {
 // domInsert.ts, createChipElement) — indique comment afficher la valeur
 // brute renvoyée par Prisma (Decimal, Date...).
 function formatValue(raw: unknown, kind: string | undefined): string {
-  if (raw === null || raw === undefined) return '';
+  const text = toText(raw);
   if (kind === 'date') {
-    const date = raw instanceof Date ? raw : new Date(String(raw));
-    return Number.isNaN(date.getTime()) ? String(raw) : date.toLocaleDateString('fr-BE');
+    const date = raw instanceof Date ? raw : new Date(text);
+    return text === '' || Number.isNaN(date.getTime()) ? text : date.toLocaleDateString('fr-BE');
   }
   if (kind === 'number') {
-    const hasToNumber = typeof raw === 'object' && raw !== null && typeof (raw as { toNumber?: unknown }).toNumber === 'function';
-    const num = hasToNumber ? (raw as { toNumber(): number }).toNumber() : Number(raw);
-    return Number.isNaN(num) ? String(raw) : num.toLocaleString('fr-BE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const num = isDecimal(raw) ? raw.toNumber() : Number(text);
+    return text === '' || Number.isNaN(num) ? text : num.toLocaleString('fr-BE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
-  return String(raw);
+  return text;
+}
+
+function isDecimal(raw: unknown): raw is { toNumber(): number; toString(): string } {
+  return typeof raw === 'object' && raw !== null && typeof (raw as { toNumber?: unknown }).toNumber === 'function';
+}
+
+// Valeur brute → texte. Un chemin de fusion qui pointe vers un objet ou une
+// liste (ex. « Contrat.Societe » au lieu de « Contrat.Societe.Nom ») ne
+// donne rien plutôt que « [object Object] » dans le PDF.
+function toText(raw: unknown): string {
+  if (typeof raw === 'string') return raw;
+  if (typeof raw === 'number' || typeof raw === 'bigint' || typeof raw === 'boolean') return String(raw);
+  if (raw instanceof Date) return raw.toISOString();
+  if (isDecimal(raw)) return raw.toString();
+  return '';
 }
 
 // Remplace chaque jeton `[data-merge-field]` trouvé sous `root` par sa

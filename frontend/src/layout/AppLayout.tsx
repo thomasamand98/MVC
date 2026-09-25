@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactElement, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState, type ReactElement, type ReactNode } from 'react'
 import { Sidebar, type MenuNode } from './Sidebar.js'
 import { TabBar } from './TabBar.js'
 import { TabsContext, type OpenTabRequest } from './TabsContext.js'
@@ -29,13 +29,18 @@ import { ChauffeursPage } from '../features/chauffeurs/ChauffeursPage.js'
 import { VehiculesPage } from '../features/vehicules/VehiculesPage.js'
 import { AttelagesPage } from '../features/attelages/AttelagesPage.js'
 import { CommandesPage } from '../features/commandes/CommandesPage.js'
-import { PlanningPage } from '../features/planning/PlanningPage.js'
-import { PersonnelPage } from '../features/personnel/PersonnelPage.js'
-import { PointagePage } from '../features/pointage/PointagePage.js'
-import { EntitePage } from '../features/entite/EntitePage.js'
-import { EnumerationsPage } from '../features/enumerations/EnumerationsPage.js'
-import { DocumentTemplatesPage } from '../features/documents/DocumentTemplatesPage.js'
-import { OcrPage } from '../features/ocr/OcrPage.js'
+
+// Pages lourdes ou peu fréquentées : chargées à leur première ouverture
+// plutôt qu'avec le reste de l'application (voir le <Suspense> plus bas).
+const PlanningPage = lazy(() => import('../features/planning/PlanningPage.js').then((m) => ({ default: m.PlanningPage })))
+const PersonnelPage = lazy(() => import('../features/personnel/PersonnelPage.js').then((m) => ({ default: m.PersonnelPage })))
+const PointagePage = lazy(() => import('../features/pointage/PointagePage.js').then((m) => ({ default: m.PointagePage })))
+const EntitePage = lazy(() => import('../features/entite/EntitePage.js').then((m) => ({ default: m.EntitePage })))
+const EnumerationsPage = lazy(() => import('../features/enumerations/EnumerationsPage.js').then((m) => ({ default: m.EnumerationsPage })))
+const DocumentTemplatesPage = lazy(() =>
+  import('../features/documents/DocumentTemplatesPage.js').then((m) => ({ default: m.DocumentTemplatesPage }))
+)
+const OcrPage = lazy(() => import('../features/ocr/OcrPage.js').then((m) => ({ default: m.OcrPage })))
 
 type MenuLeafConfig = { id: string; label: string; icon?: ReactNode; render: () => ReactElement }
 type MenuGroupConfig = { id: string; label: string; icon?: ReactNode; items: MenuLeafConfig[] }
@@ -175,7 +180,9 @@ export function AppLayout() {
   // ref, `handleCloseTab` lirait un `activeId` figé au moment où l'onglet a
   // été ouvert au lieu de l'onglet réellement actif au moment du clic.
   const activeIdRef = useRef(activeId)
-  activeIdRef.current = activeId
+  useLayoutEffect(() => {
+    activeIdRef.current = activeId
+  }, [activeId])
   const [tabScopes] = useState(() => new Map<string, GuardScope>())
   const confirmLeave = useConfirmLeave()
 
@@ -283,7 +290,7 @@ export function AppLayout() {
               {openTabIds.map((id) => (
                 <div key={id} hidden={id !== activeId}>
                   <TabBoundary id={id} scopes={tabScopes}>
-                    {getTabContent(id)}
+                    <Suspense fallback={<p className="app-content-loading">Chargement...</p>}>{getTabContent(id)}</Suspense>
                   </TabBoundary>
                 </div>
               ))}

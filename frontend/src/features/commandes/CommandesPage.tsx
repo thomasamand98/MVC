@@ -7,7 +7,8 @@ import { CommandeForm, type CommandeDto } from './CommandeForm.js'
 import { useApiMutation } from '../../lib/useApiMutation.js'
 import { useContrats } from '../contrats/useContrats.js'
 import { projectionFilters, type ProjectionView } from '../../components/projection/relations.js'
-import { PeriodFilter, periodFilters, todayPeriod, type Period } from '../../components/PeriodFilter.js'
+import { PeriodFilter } from '../../components/PeriodFilter.js'
+import { periodFilters, todayPeriod, type Period } from '../../lib/period.js'
 
 const DEFAULT_PAGE_SIZE = 25
 

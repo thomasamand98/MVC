@@ -5,6 +5,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestj
 import { PlanningService } from './planning.service.js';
 import { CreatePlanningExecutionDto, MovePlanningExecutionDto } from './planning.dto.js';
 import { ZodBodyPipe } from '../common/validation.js';
+import { ParseIdPipe } from '../common/params.js';
 
 @Controller('planning')
 export class PlanningController {
@@ -25,12 +26,12 @@ export class PlanningController {
   }
 
   @Patch('executions/:id')
-  async moveExecution(@Param('id') id: string, @Body(new ZodBodyPipe(MovePlanningExecutionDto)) dto: MovePlanningExecutionDto) {
+  async moveExecution(@Param('id', ParseIdPipe) id: bigint, @Body(new ZodBodyPipe(MovePlanningExecutionDto)) dto: MovePlanningExecutionDto) {
     return this.planningService.moveExecution(id, dto);
   }
 
   @Delete('executions/:id')
-  async deleteExecution(@Param('id') id: string) {
+  async deleteExecution(@Param('id', ParseIdPipe) id: bigint) {
     await this.planningService.deleteExecution(id);
   }
 }
