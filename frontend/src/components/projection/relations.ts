@@ -69,7 +69,9 @@ export const RELATIONS: Record<EntityKey, Relation[]> = {
   personnel: [
     { target: 'chauffeurs', defaultField: 'IDPERSONNELS' },
     { target: 'pointage', defaultField: 'IDPERSONNELS' },
-    { target: 'attelages', defaultField: 'IDPERSONNELS' },
+    // Attelages de référence : liés au salarié via sa fiche chauffeur, pas
+    // de champ à préremplir.
+    { target: 'attelages' },
   ],
   vehicules: [{ target: 'societes' }, { target: 'attelages' }],
   attelages: [{ target: 'chauffeurs' }, { target: 'vehicules' }, { target: 'personnel' }],

@@ -1,15 +1,18 @@
-// Champs qu'un client peut envoyer pour créer/modifier un attelage —
-// le sous-ensemble scripturable de attelageSelect (attelage.service.ts).
-// IDCHAUFFEUR/IDTRACTEUR/IDREMORQUE/IDPERSONNELS sont des strings côté JSON
-// (BigInt non sérialisable) et Date_debut/Date_fin des strings ISO —
-// converties dans attelage.service.ts.
-export type CreateAttelageDto = {
-  IDCHAUFFEUR?: string;
-  IDTRACTEUR?: string;
-  IDREMORQUE?: string;
-  IDPERSONNELS?: string;
-  Date_debut?: string;
-  Date_fin?: string;
-};
+import { z } from 'zod';
+import { id } from '../common/validation.js';
 
-export type UpdateAttelageDto = Partial<CreateAttelageDto>;
+// Champs qu'un client peut envoyer pour créer/modifier un attelage de
+// référence (table attelages_reference) — le sous-ensemble scripturable de
+// attelageSelect (attelage.service.ts). Les IDs sont des strings côté JSON
+// (BigInt non sérialisable), '' = aucun lien — convertis dans
+// attelage.service.ts.
+export const CreateAttelageDto = z.object({
+  IDCHAUFFEUR: id.optional(),
+  IDTRACTEUR: id.optional(),
+  IDREMORQUE: id.optional(),
+  IDSOCIETES: id.optional(),
+});
+export type CreateAttelageDto = z.infer<typeof CreateAttelageDto>;
+
+export const UpdateAttelageDto = CreateAttelageDto.partial();
+export type UpdateAttelageDto = z.infer<typeof UpdateAttelageDto>;

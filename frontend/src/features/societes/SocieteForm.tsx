@@ -5,8 +5,9 @@ import { Dev } from '../enDeveloppement/Dev.js'
 import { SocieteContactsTab } from './SocieteContactsTab.js'
 import { SocieteContratsTab } from './SocieteContratsTab.js'
 import { SocieteMessagesTab } from './SocieteMessagesTab.js'
-import '../../components/PageActions.css'
+import { FichePanel, FicheTabs } from '../../components/FicheTabs.js'
 import './SocieteForm.css'
+import { useUnsavedForm } from '../../components/unsaved-changes/UnsavedChangesContext.js'
 
 // Champs scripturables d'une société, mêmes clés que le CreateSocieteDto
 // côté backend (backend/src/societe/societe.dto.ts). Prospect/Archive/
@@ -110,8 +111,7 @@ export function SocieteForm({ initial, contacts, onSubmit, onCancel }: Props) {
   })
   const [submitting, setSubmitting] = useState(false)
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault()
+  async function save() {
     setSubmitting(true)
     try {
       await onSubmit(form)
@@ -120,30 +120,32 @@ export function SocieteForm({ initial, contacts, onSubmit, onCancel }: Props) {
     }
   }
 
+  // Quitter la fiche modifiée demande « Enregistrer / Annuler les
+  // modifications » (voir components/unsaved-changes/).
+  const { formRef, confirmLeave } = useUnsavedForm(form, save)
+
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault()
+    void save()
+  }
+
   return (
     <div className="societe-form">
-      <div className="societe-form-toptabs" role="tablist">
-        {TOP_TABS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            role="tab"
-            aria-selected={topTab === tab.id}
-            className={`societe-form-toptab${topTab === tab.id ? ' active' : ''}`}
-            disabled={tab.id !== 'principale' && !initial}
-            title={tab.id !== 'principale' && !initial ? 'Enregistrez d’abord la société pour accéder à cet onglet' : undefined}
-            onClick={() => setTopTab(tab.id)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <FicheTabs
+        ariaLabel="Sections de la fiche société"
+        value={topTab}
+        onChange={setTopTab}
+        tabs={TOP_TABS.map((tab) => {
+          const locked = tab.id !== 'principale' && !initial
+          return { ...tab, disabled: locked, title: locked ? 'Enregistrez d’abord la société pour accéder à cet onglet' : undefined }
+        })}
+      />
 
       {topTab === 'principale' && (
-        <form onSubmit={handleSubmit} className="societe-form-principale">
-          <div className="societe-form-actions">
-            <button type="button" className="page-actions-button secondary" onClick={onCancel}>Annuler</button>
-            <button type="submit" className="page-actions-button primary" disabled={submitting}>
+        <form ref={formRef} onSubmit={handleSubmit} className="societe-form-principale">
+          <div className="form-actions">
+            <button type="button" className="btn" onClick={() => void confirmLeave(onCancel)}>Annuler</button>
+            <button type="submit" className="btn primary" disabled={submitting}>
               {submitting ? 'Enregistrement...' : 'Enregistrer'}
             </button>
           </div>
@@ -151,35 +153,35 @@ export function SocieteForm({ initial, contacts, onSubmit, onCancel }: Props) {
           <div className="societe-form-columns">
             <section className="societe-form-section">
               <h4 className="societe-form-section-title">Coordonnées</h4>
-              <label className="societe-field">
+              <label className="field">
                 Nom
                 <input value={form.Nom_societe} onChange={(e) => setForm({ ...form, Nom_societe: e.target.value })} />
               </label>
-              <label className="societe-field">
+              <label className="field">
                 Dénomination
                 <input value={form.Denomination} onChange={(e) => setForm({ ...form, Denomination: e.target.value })} />
               </label>
-              <label className="societe-field">
+              <label className="field">
                 N° TVA
                 <input value={form.TVA} onChange={(e) => setForm({ ...form, TVA: e.target.value })} />
               </label>
-              <label className="societe-field">
+              <label className="field">
                 Activité
                 <input value={form.Activite} onChange={(e) => setForm({ ...form, Activite: e.target.value })} />
               </label>
-              <label className="societe-field">
+              <label className="field">
                 Site web
                 <input value={form.Site_web} onChange={(e) => setForm({ ...form, Site_web: e.target.value })} />
               </label>
               <div className="societe-field-row">
-                <label className="societe-field">
+                <label className="field">
                   Prospect
                   <select value={form.Prospect} onChange={(e) => setForm({ ...form, Prospect: Number(e.target.value) })}>
                     <option value={0}>Non</option>
                     <option value={1}>Oui</option>
                   </select>
                 </label>
-                <label className="societe-field">
+                <label className="field">
                   Archivée
                   <select value={form.Archive} onChange={(e) => setForm({ ...form, Archive: Number(e.target.value) })}>
                     <option value={0}>Non</option>
@@ -187,7 +189,7 @@ export function SocieteForm({ initial, contacts, onSubmit, onCancel }: Props) {
                   </select>
                 </label>
               </div>
-              <label className="societe-field">
+              <label className="field">
                 ID adresse
                 <input value={form.IDADRESSES} onChange={(e) => setForm({ ...form, IDADRESSES: e.target.value })} />
               </label>
@@ -196,58 +198,47 @@ export function SocieteForm({ initial, contacts, onSubmit, onCancel }: Props) {
                   Adresse actuelle : {[initial.Adresse.Adresse1, initial.Adresse.CP, initial.Adresse.Localite].filter(Boolean).join(', ') || '—'}
                 </p>
               )}
-              <label className="societe-field">
+              <label className="field">
                 Note
                 <textarea rows={4} value={form.Note} onChange={(e) => setForm({ ...form, Note: e.target.value })} />
               </label>
             </section>
 
             <section className="societe-form-section societe-form-billing">
-              <div className="societe-billing-tabs" role="tablist">
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={billingTab === 'client'}
-                  className={`societe-billing-tab${billingTab === 'client' ? ' active' : ''}`}
-                  onClick={() => setBillingTab('client')}
-                >
-                  Client
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={billingTab === 'fournisseur'}
-                  className={`societe-billing-tab${billingTab === 'fournisseur' ? ' active' : ''}`}
-                  onClick={() => setBillingTab('fournisseur')}
-                >
-                  Fournisseur
-                </button>
-              </div>
+              <FicheTabs
+                ariaLabel="Facturation"
+                value={billingTab}
+                onChange={setBillingTab}
+                tabs={[
+                  { id: 'client', label: 'Client' },
+                  { id: 'fournisseur', label: 'Fournisseur' },
+                ]}
+              />
 
               {billingTab === 'client' ? (
                 <div className="societe-billing-panel">
                   <h4 className="societe-form-section-title">Données pour la facturation client</h4>
                   <div className="societe-field-row">
-                    <label className="societe-field">
+                    <label className="field">
                       Numéro client
                       <input value={form.Client_Numero_client} onChange={(e) => setForm({ ...form, Client_Numero_client: e.target.value })} />
                     </label>
-                    <label className="societe-field">
+                    <label className="field">
                       Délai de paiement
                       <input value={form.Client_Delai_paiement} onChange={(e) => setForm({ ...form, Client_Delai_paiement: e.target.value })} />
                     </label>
                   </div>
                   <div className="societe-field-row">
-                    <label className="societe-field">
+                    <label className="field">
                       Taux de TVA (%)
                       <input value={form.Client_Taux_tva} onChange={(e) => setForm({ ...form, Client_Taux_tva: e.target.value })} />
                     </label>
-                    <label className="societe-field">
+                    <label className="field">
                       E-mail comptabilité
                       <input type="email" value={form.Client_E_mail_comptabilite} onChange={(e) => setForm({ ...form, Client_E_mail_comptabilite: e.target.value })} />
                     </label>
                   </div>
-                  <label className="societe-field">
+                  <label className="field">
                     Contact pour la comptabilité
                     <select
                       value={form.Client_IDCONTACTS_Comptabilite}
@@ -259,7 +250,7 @@ export function SocieteForm({ initial, contacts, onSubmit, onCancel }: Props) {
                       ))}
                     </select>
                   </label>
-                  <label className="societe-checkbox">
+                  <label className="checkbox">
                     <input
                       type="checkbox"
                       checked={form.Client_Facture_mail === 1}
@@ -267,7 +258,7 @@ export function SocieteForm({ initial, contacts, onSubmit, onCancel }: Props) {
                     />
                     Facture e-mail
                   </label>
-                  <label className="societe-checkbox">
+                  <label className="checkbox">
                     <input
                       type="checkbox"
                       checked={form.Client_Adresse_facturation_societe === 1}
@@ -276,7 +267,7 @@ export function SocieteForm({ initial, contacts, onSubmit, onCancel }: Props) {
                     Adresse de facturation = adresse de la société
                   </label>
                   {form.Client_Adresse_facturation_societe !== 1 && (
-                    <label className="societe-field">
+                    <label className="field">
                       ID adresse de facturation
                       <input
                         value={form.Client_IDADRESSES_facturation}
@@ -289,14 +280,14 @@ export function SocieteForm({ initial, contacts, onSubmit, onCancel }: Props) {
                 <div className="societe-billing-panel">
                   <h4 className="societe-form-section-title">Données pour la facturation fournisseur</h4>
                   <div className="societe-field-row">
-                    <label className="societe-field">
+                    <label className="field">
                       Numéro fournisseur
                       <input
                         value={form.Fournisseur_Numero_fournisseur}
                         onChange={(e) => setForm({ ...form, Fournisseur_Numero_fournisseur: e.target.value })}
                       />
                     </label>
-                    <label className="societe-field">
+                    <label className="field">
                       Délai de paiement
                       <input
                         value={form.Fournisseur_Delai_paiement}
@@ -305,11 +296,11 @@ export function SocieteForm({ initial, contacts, onSubmit, onCancel }: Props) {
                     </label>
                   </div>
                   <div className="societe-field-row">
-                    <label className="societe-field">
+                    <label className="field">
                       Taux de TVA (%)
                       <input value={form.Fournisseur_Taux_tva} onChange={(e) => setForm({ ...form, Fournisseur_Taux_tva: e.target.value })} />
                     </label>
-                    <label className="societe-field">
+                    <label className="field">
                       E-mail comptabilité
                       <input
                         type="email"
@@ -319,16 +310,16 @@ export function SocieteForm({ initial, contacts, onSubmit, onCancel }: Props) {
                     </label>
                   </div>
                   <div className="societe-field-row">
-                    <label className="societe-field">
+                    <label className="field">
                       IBAN
                       <input value={form.Fournisseur_Iban} onChange={(e) => setForm({ ...form, Fournisseur_Iban: e.target.value })} />
                     </label>
-                    <label className="societe-field">
+                    <label className="field">
                       BIC
                       <input value={form.Fournisseur_Bic} onChange={(e) => setForm({ ...form, Fournisseur_Bic: e.target.value })} />
                     </label>
                   </div>
-                  <label className="societe-field">
+                  <label className="field">
                     Contact pour la comptabilité
                     <select
                       value={form.Fournisseur_IDCONTACTS_Comptabilite}
@@ -340,7 +331,7 @@ export function SocieteForm({ initial, contacts, onSubmit, onCancel }: Props) {
                       ))}
                     </select>
                   </label>
-                  <label className="societe-checkbox">
+                  <label className="checkbox">
                     <input
                       type="checkbox"
                       checked={form.Fournisseur_Facture_mail === 1}
@@ -348,7 +339,7 @@ export function SocieteForm({ initial, contacts, onSubmit, onCancel }: Props) {
                     />
                     Facture e-mail
                   </label>
-                  <label className="societe-checkbox">
+                  <label className="checkbox">
                     <input
                       type="checkbox"
                       checked={form.Fournisseur_Adresse_facturation_societe === 1}
@@ -357,7 +348,7 @@ export function SocieteForm({ initial, contacts, onSubmit, onCancel }: Props) {
                     Adresse de facturation = adresse de la société
                   </label>
                   {form.Fournisseur_Adresse_facturation_societe !== 1 && (
-                    <label className="societe-field">
+                    <label className="field">
                       ID adresse de facturation
                       <input
                         value={form.Fournisseur_IDADRESSES_facturation}
@@ -372,11 +363,19 @@ export function SocieteForm({ initial, contacts, onSubmit, onCancel }: Props) {
         </form>
       )}
 
-      {topTab === 'contacts' && initial && (
-        <SocieteContactsTab societeId={initial.IDSOCIETES} />
+      {/* Onglets tableau gardés montés : une fiche contact ou contrat en
+          cours de saisie survit au changement d'onglet. */}
+      {initial && (
+        <FichePanel active={topTab === 'contacts'}>
+          <SocieteContactsTab societeId={initial.IDSOCIETES} />
+        </FichePanel>
       )}
 
-      {topTab === 'contrats' && initial && <SocieteContratsTab societeId={initial.IDSOCIETES} />}
+      {initial && (
+        <FichePanel active={topTab === 'contrats'}>
+          <SocieteContratsTab societeId={initial.IDSOCIETES} />
+        </FichePanel>
+      )}
       {topTab === 'documents' && <Dev />}
       {topTab === 'messages' && initial && <SocieteMessagesTab societeId={initial.IDSOCIETES} />}
     </div>

@@ -7,6 +7,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { buildSearchWhere } from '../common/search.js';
 import { andWhere, projectionWhere, type Projection, type ProjectionMap } from '../common/projection.js';
 import { serializeBigInt } from '../prisma/serialize-bigint.js';
+import { toOptionalId } from '../common/blank-to-null.js';
 import { CreateMarchandiseDto, UpdateMarchandiseDto } from './marchandise.dto.js';
 
 export const marchandiseSelect = {
@@ -105,11 +106,12 @@ export class MarchandiseService {
 
 // Le DTO a les mêmes noms de champs que Prisma — seuls les IDs (BigInt côté
 // Prisma, string côté JSON) ont besoin d'être convertis, le reste passe tel
-// quel via le spread.
+// quel via le spread. IDDECHETS '' retire le déchet lié (NULL : 0 violerait
+// la clé étrangère) ; CouleurPlanning '0' efface la couleur (défaut WinDev).
 function toMarchandiseData(dto: CreateMarchandiseDto | UpdateMarchandiseDto) {
   return {
     ...dto,
     CouleurPlanning: dto.CouleurPlanning ? BigInt(dto.CouleurPlanning) : undefined,
-    IDDECHETS: dto.IDDECHETS ? BigInt(dto.IDDECHETS) : undefined,
+    IDDECHETS: toOptionalId(dto.IDDECHETS),
   };
 }

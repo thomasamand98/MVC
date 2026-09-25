@@ -18,6 +18,8 @@ import type { MergeContext } from '../document-merge/merge-html.js';
 export const contratSelect = {
   IDCONTRATS: true,
   Num_contrat: true,
+  // Numéro affiché « Num_contrat.Version_contrat » (ex. 1764.24/01).
+  Version_contrat: true,
   Description_projet: true,
   Date_debut: true,
   Date_fin: true,
@@ -139,10 +141,10 @@ export class ContratService {
   // societeId optionnel : ne renvoie que les contrats de cette société —
   // alimente l'onglet « Contrats / Offres » de la fiche Société
   // (SocieteForm.tsx).
-  async getContrats(page?: number, pageSize?: number, societeId?: string, search?: string, projection?: Projection) {
+  async getContrats(page?: number, pageSize?: number, societeId?: bigint, search?: string, projection?: Projection) {
     const paginate = page !== undefined && pageSize !== undefined && pageSize > 0;
     const filterWhere: Prisma.ContratWhereInput = {
-      ...(societeId ? { IDSOCIETES: BigInt(societeId) } : {}),
+      ...(societeId !== undefined ? { IDSOCIETES: societeId } : {}),
       ...buildSearchWhere<Prisma.ContratWhereInput>(search, (c) => [
         { Num_contrat: c },
         { Description_projet: c },
@@ -165,6 +167,15 @@ export class ContratService {
 
   // `Chiffre_affaires` (bloc « Chiffres clé » de la fiche) : somme HT des
   // factures du contrat, hors proformas (pas de vraies factures).
+  async getContratPrestations(id: bigint) {
+    const prestations = await this.prisma.prestation.findMany({
+      where: { IDCONTRATS: id },
+      orderBy: [{ Ordre: 'asc' }, { IDPRESTATIONS: 'asc' }],
+      select: { IDPRESTATIONS: true, Description_prestation: true, Description_courte: true },
+    });
+    return { prestations: serializeBigInt(prestations) };
+  }
+
   async getContrat(id: bigint) {
     const [contrat, chiffreAffaires] = await Promise.all([
       this.prisma.contrat.findUniqueOrThrow({

@@ -2,8 +2,10 @@
 // Reçoit les requêtes HTTP de la View et délègue au Model (MarchandiseService).
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { MarchandiseService } from './marchandise.service.js';
-import type { CreateMarchandiseDto, UpdateMarchandiseDto } from './marchandise.dto.js';
+import { CreateMarchandiseDto, UpdateMarchandiseDto } from './marchandise.dto.js';
 import { parseProjection } from '../common/projection.js';
+import { ParseIdPipe, parsePage, parsePageSize } from '../common/params.js';
+import { ZodBodyPipe } from '../common/validation.js';
 
 @Controller()
 export class MarchandiseController {
@@ -13,26 +15,26 @@ export class MarchandiseController {
   // avant). Voir MarchandiseService.getMarchandises pour le détail.
   @Get('marchandises')
   async getMarchandises(@Query('page') page?: string, @Query('pageSize') pageSize?: string, @Query('search') search?: string, @Query('via') via?: string, @Query('ids') ids?: string) {
-    return this.marchandiseService.getMarchandises(page ? Number(page) : undefined, pageSize ? Number(pageSize) : undefined, search, parseProjection(via, ids));
+    return this.marchandiseService.getMarchandises(parsePage(page), parsePageSize(pageSize), search, parseProjection(via, ids));
   }
 
   @Get('marchandises/:id')
-  async getMarchandise(@Param('id') id: string) {
-    return this.marchandiseService.getMarchandise(BigInt(id));
+  async getMarchandise(@Param('id', ParseIdPipe) id: bigint) {
+    return this.marchandiseService.getMarchandise(id);
   }
 
   @Post('marchandises')
-  async createMarchandise(@Body() dto: CreateMarchandiseDto) {
+  async createMarchandise(@Body(new ZodBodyPipe(CreateMarchandiseDto)) dto: CreateMarchandiseDto) {
     return this.marchandiseService.createMarchandise(dto);
   }
 
   @Patch('marchandises/:id')
-  async updateMarchandise(@Param('id') id: string, @Body() dto: UpdateMarchandiseDto) {
-    return this.marchandiseService.updateMarchandise(BigInt(id), dto);
+  async updateMarchandise(@Param('id', ParseIdPipe) id: bigint, @Body(new ZodBodyPipe(UpdateMarchandiseDto)) dto: UpdateMarchandiseDto) {
+    return this.marchandiseService.updateMarchandise(id, dto);
   }
 
   @Delete('marchandises/:id')
-  async deleteMarchandise(@Param('id') id: string) {
-    await this.marchandiseService.deleteMarchandise(BigInt(id));
+  async deleteMarchandise(@Param('id', ParseIdPipe) id: bigint) {
+    await this.marchandiseService.deleteMarchandise(id);
   }
 }

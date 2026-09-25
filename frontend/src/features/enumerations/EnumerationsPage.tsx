@@ -138,7 +138,7 @@ export function EnumerationsPage() {
     return (
       <p>
         Erreur : {error}{' '}
-        <button type="button" className="enum-button" onClick={refetch}>
+        <button type="button" className="btn" onClick={refetch}>
           Réessayer
         </button>
       </p>
@@ -156,7 +156,7 @@ export function EnumerationsPage() {
     <div className="enum-page">
       <div className="page-header">
         <h2>Énumérations</h2>
-        <button type="button" className="enum-button primary" onClick={() => setCategorieModal({ mode: 'create' })}>
+        <button type="button" className="btn primary" onClick={() => setCategorieModal({ mode: 'create' })}>
           <PlusIcon />
           Nouvelle catégorie
         </button>
@@ -214,13 +214,13 @@ export function EnumerationsPage() {
                   ) : null}
                 </div>
                 <div className="enum-values-actions">
-                  <button type="button" className="enum-button" onClick={() => setCategorieModal({ mode: 'edit', item: selected })}>
+                  <button type="button" className="btn" onClick={() => setCategorieModal({ mode: 'edit', item: selected })}>
                     <EditIcon />
                     Modifier
                   </button>
                   <button
                     type="button"
-                    className="enum-button danger"
+                    className="btn danger"
                     onClick={() => deleteCategorie(selected)}
                     disabled={deleteCategorieBlocker !== null}
                     title={deleteCategorieBlocker ?? undefined}
@@ -228,7 +228,7 @@ export function EnumerationsPage() {
                     <TrashIcon />
                     Supprimer
                   </button>
-                  <button type="button" className="enum-button primary" onClick={() => setEnumerationModal({ mode: 'create' })}>
+                  <button type="button" className="btn primary" onClick={() => setEnumerationModal({ mode: 'create' })}>
                     <PlusIcon />
                     Nouvelle valeur
                   </button>
@@ -251,7 +251,7 @@ export function EnumerationsPage() {
               ) : valuesError ? (
                 <p className="enum-empty">
                   Erreur : {valuesError}{' '}
-                  <button type="button" className="enum-button" onClick={refetchValues}>
+                  <button type="button" className="btn" onClick={refetchValues}>
                     Réessayer
                   </button>
                 </p>
@@ -286,12 +286,12 @@ export function EnumerationsPage() {
                             <input type="checkbox" checked={Boolean(e.Valeur_system)} disabled aria-label="Valeur système" />
                           </td>
                           <td className="enum-row-actions">
-                            <button type="button" className="enum-icon-button" onClick={() => setEnumerationModal({ mode: 'edit', item: e })} aria-label="Modifier" title="Modifier">
+                            <button type="button" className="icon-btn" onClick={() => setEnumerationModal({ mode: 'edit', item: e })} aria-label="Modifier" title="Modifier">
                               <EditIcon />
                             </button>
                             <button
                               type="button"
-                              className="enum-icon-button danger"
+                              className="icon-btn danger"
                               onClick={() => deleteEnumeration(e)}
                               disabled={Boolean(e.Valeur_system)}
                               aria-label="Supprimer"

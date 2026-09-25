@@ -8,6 +8,7 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { windevColorToHex } from '../common/windev-color.js';
 import type { CreatePlanningExecutionDto, MovePlanningExecutionDto } from './planning.dto.js';
 
 // Au-delà, la requête devient lourde et la grille illisible (même limite
@@ -386,16 +387,6 @@ function toMarchandise(prestation: PrestationRow | null) {
     nom: m.Nom_marchandise ?? 'Sans nom',
     couleur: windevColorToHex(m.CouleurPlanning) ?? FALLBACK_COLORS[Number(m.IDMARCHANDISES % BigInt(FALLBACK_COLORS.length))],
   };
-}
-
-// CouleurPlanning est une couleur WinDev (fonction RGB()) : un entier
-// R + G×256 + B×65536, soit l'ordre BGR d'un COLORREF Windows. 0 (noir) est
-// la valeur par défaut de la colonne, traitée comme « pas de couleur ».
-function windevColorToHex(value: bigint | null): string | null {
-  if (!value || value <= 0n || value > 0xffffffn) return null;
-  const n = Number(value);
-  const hex = (c: number) => c.toString(16).padStart(2, '0');
-  return `#${hex(n & 0xff)}${hex((n >> 8) & 0xff)}${hex((n >> 16) & 0xff)}`;
 }
 
 // Statut en texte libre (pas de liste fixée) : on en déduit l'état affiché

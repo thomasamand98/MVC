@@ -4,7 +4,8 @@
 // d'id dans les routes, contrairement aux autres features sous src/.
 import { Body, Controller, Get, Patch } from '@nestjs/common';
 import { EntiteService } from './entite.service.js';
-import type { UpdateEntiteDto } from './entite.dto.js';
+import { UpdateEntiteDto } from './entite.dto.js';
+import { ZodBodyPipe } from '../common/validation.js';
 
 @Controller()
 export class EntiteController {
@@ -16,7 +17,7 @@ export class EntiteController {
   }
 
   @Patch('entite')
-  async updateEntite(@Body() dto: UpdateEntiteDto) {
+  async updateEntite(@Body(new ZodBodyPipe(UpdateEntiteDto)) dto: UpdateEntiteDto) {
     return this.entiteService.updateEntite(dto);
   }
 }

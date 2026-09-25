@@ -5,15 +5,26 @@ import { useApiList, type ApiListPagination } from '../../lib/useApiList.js'
 // reflète directement le `commandeSelect` de commande.service.ts.
 // IDCOMMANDES est un BigInt côté Prisma, converti en string côté service
 // pour rester sérialisable en JSON. Le "client" (société du contrat lié) et
-// la "marchandise"/"unité" (via la prestation liée) sont résolus en 2 sauts
-// — Commande n'a pas de lien direct vers Societe/Marchandise.
+// la "marchandise"/"unité" (prestation du contrat) sont résolus via le
+// contrat — Commande n'a pas de lien direct vers Societe/Marchandise.
 export type Commande = {
   IDCOMMANDES: string
   Date_commande: string | null
   IDCONTRATS: string | null
-  Contrat: { Num_contrat: string | null; Societe: { Nom_societe: string | null } | null } | null
+  Contrat: {
+    Num_contrat: string | null
+    Version_contrat: string | null
+    Date_debut: string | null
+    Date_fin: string | null
+    Societe: { Nom_societe: string | null } | null
+  } | null
   IDPRESTATIONS: string | null
-  Prestation: { Unite: number | null; Marchandise: { Nom_marchandise: string | null } | null } | null
+  Prestation: { Description_prestation: string | null } | null
+  // Résolus par le backend (commande.service.ts → withMarchandise) via
+  // commande → contrat → prestation. Unite est un code de l'énumération
+  // « unite_prestation ».
+  Marchandise: { Nom_marchandise: string | null } | null
+  Unite: number | null
   QT: number | null
   QT_planifie: number | null
   Statut: string | null

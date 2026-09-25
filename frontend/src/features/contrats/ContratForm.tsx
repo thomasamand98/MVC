@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { FicheTabs } from '../../components/FicheTabs.js'
 import type { ConditionCmr, ContratDetail } from './useContrats.js'
 import type { Societe, SocieteDetail } from '../societes/useSocietes.js'
 import type { TypeFacture } from './useTypesFacture.js'
@@ -7,10 +8,11 @@ import { ContratPrestationsTab } from './ContratPrestationsTab.js'
 import { ContratFacturesTab } from './ContratFacturesTab.js'
 import { ContratPdfButton } from './ContratPdfButton.js'
 import { formatEuro } from './format.js'
+import { formatNumContrat } from './numero.js'
 import { apiJson } from '../../lib/api.js'
 import type { DocumentTemplateSummary } from '../documents/types.js'
-import '../../components/PageActions.css'
 import './ContratForm.css'
+import { useUnsavedForm } from '../../components/unsaved-changes/UnsavedChangesContext.js'
 
 // Champs scripturables d'un contrat affichés dans la fiche, mêmes clés que le
 // CreateContratDto côté backend (backend/src/contrat/contrat.dto.ts) : dates
@@ -67,14 +69,6 @@ type TabId = (typeof TABS)[number]['id']
 // par <input type="date">.
 function toDateInput(value: string | null | undefined): string {
   return value ? value.slice(0, 10) : ''
-}
-
-// Numéro affiché d'un contrat existant : numéro + version (« 1680.24/07 »),
-// comme dans l'ancienne fiche. « 0 » est la version par défaut de la base,
-// pour un contrat jamais versionné.
-function fullNumero(contrat: ContratDetail): string {
-  const numero = contrat.Num_contrat ?? ''
-  return contrat.Version_contrat && contrat.Version_contrat !== '0' ? `${numero}.${contrat.Version_contrat}` : numero
 }
 
 // Fiche complète d'un contrat (voir ContratsPage.tsx), sur le modèle de la
@@ -148,14 +142,22 @@ export function ContratForm({ initial, societes, typesFacture, documentTemplates
     }))
   }
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault()
+  async function save() {
     setSubmitting(true)
     try {
       await onSubmit(form)
     } finally {
       setSubmitting(false)
     }
+  }
+
+  // Quitter la fiche modifiée demande « Enregistrer / Annuler les
+  // modifications » (voir components/unsaved-changes/).
+  const { formRef, confirmLeave } = useUnsavedForm(form, save)
+
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault()
+    void save()
   }
 
   const counts: Partial<Record<TabId, number>> = {
@@ -165,35 +167,27 @@ export function ContratForm({ initial, societes, typesFacture, documentTemplates
 
   return (
     <div className="contrat-form">
-      <div className="contrat-tabs">
-        <div className="contrat-tabs-list" role="tablist">
-          {TABS.map((t) => {
-            const locked = t.id !== 'detail' && !initial
-            return (
-              <button
-                key={t.id}
-                type="button"
-                role="tab"
-                aria-selected={tab === t.id}
-                className={`contrat-tab${tab === t.id ? ' active' : ''}`}
-                disabled={locked}
-                title={locked ? 'Enregistrez d’abord le contrat pour accéder à cet onglet' : undefined}
-                onClick={() => setTab(t.id)}
-              >
-                {t.label}
-                {counts[t.id] ? <span className="contrat-tab-count">{counts[t.id]}</span> : null}
-              </button>
-            )
-          })}
-        </div>
-        {initial && <ContratPdfButton contratId={initial.IDCONTRATS} templates={documentTemplates} />}
-      </div>
+      <FicheTabs
+        ariaLabel="Sections de la fiche contrat"
+        value={tab}
+        onChange={setTab}
+        tabs={TABS.map((t) => {
+          const locked = t.id !== 'detail' && !initial
+          return {
+            ...t,
+            count: counts[t.id],
+            disabled: locked,
+            title: locked ? 'Enregistrez d’abord le contrat pour accéder à cet onglet' : undefined,
+          }
+        })}
+        actions={initial && <ContratPdfButton contratId={initial.IDCONTRATS} templates={documentTemplates} />}
+      />
 
       {tab === 'detail' && (
-        <form onSubmit={handleSubmit} className="contrat-detail">
-          <div className="contrat-actions">
-            <button type="button" className="page-actions-button secondary" onClick={onCancel}>Annuler</button>
-            <button type="submit" className="page-actions-button primary" disabled={submitting}>
+        <form ref={formRef} onSubmit={handleSubmit} className="contrat-detail">
+          <div className="form-actions">
+            <button type="button" className="btn" onClick={() => void confirmLeave(onCancel)}>Annuler</button>
+            <button type="submit" className="btn primary" disabled={submitting}>
               {submitting ? 'Enregistrement...' : 'Enregistrer'}
             </button>
           </div>
@@ -203,35 +197,35 @@ export function ContratForm({ initial, societes, typesFacture, documentTemplates
               <section className="contrat-card">
                 <h4 className="contrat-card-title">Contrat</h4>
                 <div className="contrat-row">
-                  <label className="contrat-field">
+                  <label className="field">
                     Numéro
                     {/* Attribué à la création, puis figé (affiché avec sa
                         version) : les factures et commandes s'y réfèrent. */}
                     <input
-                      value={initial ? fullNumero(initial) : form.Num_contrat}
+                      value={initial ? formatNumContrat(initial) : form.Num_contrat}
                       onChange={(e) => set('Num_contrat', e.target.value)}
                       maxLength={50}
                       readOnly={initial !== null}
                     />
                   </label>
-                  <label className="contrat-field">
+                  <label className="field">
                     Date d’ouverture
                     <input type="date" value={form.Date_debut} onChange={(e) => set('Date_debut', e.target.value)} />
                   </label>
-                  <label className="contrat-field">
+                  <label className="field">
                     Date de fin
                     <input type="date" value={form.Date_fin} min={form.Date_debut || undefined} onChange={(e) => set('Date_fin', e.target.value)} />
                   </label>
                 </div>
-                <label className="contrat-checkbox">
+                <label className="checkbox contrat-checkbox">
                   <input type="checkbox" checked={form.Offre_de_prix === 1} onChange={(e) => set('Offre_de_prix', e.target.checked ? 1 : 0)} />
                   Offre de prix
                 </label>
-                <label className="contrat-field">
+                <label className="field">
                   Instruction CMR
                   <input value={form.Instruction_CMR} onChange={(e) => set('Instruction_CMR', e.target.value)} maxLength={250} />
                 </label>
-                <label className="contrat-field">
+                <label className="field">
                   Type facture
                   <select value={form.IDTYPES_FACTURE} onChange={(e) => set('IDTYPES_FACTURE', e.target.value)}>
                     <option value="">—</option>
@@ -240,11 +234,11 @@ export function ContratForm({ initial, societes, typesFacture, documentTemplates
                     ))}
                   </select>
                 </label>
-                <label className="contrat-field">
+                <label className="field">
                   Description du projet
                   <textarea rows={6} value={form.Description_projet} onChange={(e) => set('Description_projet', e.target.value)} maxLength={1000} />
                 </label>
-                <label className="contrat-field">
+                <label className="field">
                   Note confidentielle
                   <textarea rows={4} value={form.Note_confidentielle} onChange={(e) => set('Note_confidentielle', e.target.value)} maxLength={500} />
                 </label>
@@ -255,7 +249,7 @@ export function ContratForm({ initial, societes, typesFacture, documentTemplates
               <section className="contrat-card">
                 <h4 className="contrat-card-title">Client</h4>
                 <div className="contrat-row">
-                  <label className="contrat-field contrat-grow">
+                  <label className="field contrat-grow">
                     Société
                     <select value={form.IDSOCIETES} onChange={(e) => void handleSocieteChange(e.target.value)}>
                       <option value="">—</option>
@@ -264,22 +258,22 @@ export function ContratForm({ initial, societes, typesFacture, documentTemplates
                       ))}
                     </select>
                   </label>
-                  <label className="contrat-field">
+                  <label className="field">
                     Numéro client
                     <input value={client?.Numero_client ?? ''} readOnly tabIndex={-1} />
                   </label>
                 </div>
                 <div className="contrat-row">
-                  <label className="contrat-field">
+                  <label className="field">
                     Référence client
                     <input value={form.Reference_client} onChange={(e) => set('Reference_client', e.target.value)} maxLength={100} />
                   </label>
-                  <label className="contrat-field contrat-field-narrow">
+                  <label className="field contrat-field-narrow">
                     Taux TVA (%)
                     <input type="number" step="0.01" min="0" value={form.Taux_tva} onChange={(e) => set('Taux_tva', e.target.value)} />
                   </label>
                 </div>
-                <label className="contrat-field">
+                <label className="field">
                   Commissionnaire
                   <textarea rows={3} value={form.Commissionnaire} onChange={(e) => set('Commissionnaire', e.target.value)} maxLength={250} />
                 </label>
@@ -288,11 +282,11 @@ export function ContratForm({ initial, societes, typesFacture, documentTemplates
               <section className="contrat-card">
                 <h4 className="contrat-card-title">Archivage</h4>
                 <div className="contrat-row contrat-row-center">
-                  <label className="contrat-checkbox">
+                  <label className="checkbox contrat-checkbox">
                     <input type="checkbox" checked={form.Archive === 1} onChange={(e) => handleArchiveChange(e.target.checked)} />
                     Archivé
                   </label>
-                  <label className="contrat-field contrat-field-narrow">
+                  <label className="field contrat-field-narrow">
                     Année
                     <input
                       value={form.Annee_archivage}

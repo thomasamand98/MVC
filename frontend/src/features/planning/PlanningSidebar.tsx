@@ -108,7 +108,7 @@ export function PlanningSidebar({ commandes, dechargements, chauffeurNom, onDrag
                     <strong>{d.client}</strong>
                     <button
                       type="button"
-                      className="pl-icon-btn pl-icon-btn--danger"
+                      className="icon-btn sm danger"
                       aria-label={`Supprimer le déchargement ${d.client}`}
                       title="Supprimer"
                       onClick={() => { if (window.confirm('Supprimer ce déchargement en attente ?')) onDeleteDechargement(d.id) }}

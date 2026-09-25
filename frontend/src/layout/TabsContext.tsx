@@ -9,8 +9,11 @@ export type TabsContextValue = {
   // pour ouvrir la fiche d'une ligne dans son propre onglet.
   openOrActivateTab: (tab: OpenTabRequest) => void
   // Ferme un onglet (dynamique ou de menu) — bascule sur son voisin s'il
-  // était actif, même logique que la croix de TabBar.tsx.
-  closeTab: (id: string) => void
+  // était actif, même logique que la croix de TabBar.tsx. Si l'onglet
+  // contient une saisie modifiée, demande d'abord « Enregistrer / Annuler
+  // les modifications » ; `force` ferme sans demander (ex. juste après un
+  // enregistrement réussi).
+  closeTab: (id: string, options?: { force?: boolean }) => void
 }
 
 export const TabsContext = createContext<TabsContextValue | null>(null)

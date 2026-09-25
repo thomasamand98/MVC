@@ -15,7 +15,7 @@ export type Chauffeur = {
   IDSOCIETES: string | null
   Societe: { Nom_societe: string | null } | null
   IDPERSONNELS: string | null
-  Personnel: { Nom_Personnel: string | null; Prenom_Personnel: string | null } | null
+  Personnel: { Nom_Personnel: string | null; Prenom_Personnel: string | null; E_mail_professionnel: string | null } | null
 }
 
 // Récupère la liste des chauffeurs depuis l'API au montage du composant

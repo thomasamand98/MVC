@@ -4,7 +4,7 @@
   margin-bottom: 1rem;
   padding: 0.75rem 1rem;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius);
 }
 
 .ocr-capture-bar {
@@ -31,7 +31,7 @@
   object-fit: contain;
   object-position: top left;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--code-bg);
   box-sizing: border-box;
 }
@@ -56,7 +56,7 @@
 
 .ocr-capture-overlay-hint {
   margin: 0;
-  color: #fff;
+  color: var(--on-brand);
   font-size: 0.9rem;
 }
 
@@ -76,8 +76,8 @@
 
 .ocr-capture-selection {
   position: absolute;
-  border: 2px solid #03c1ec;
-  background: rgba(3, 193, 236, 0.15);
+  border: 2px solid var(--brand);
+  background: var(--brand-bg);
   box-sizing: border-box;
   pointer-events: none;
 }
@@ -89,7 +89,7 @@
   min-height: 5rem;
   padding: 1rem;
   border: 1px dashed var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--code-bg);
   text-align: center;
   font-size: 0.85rem;
@@ -109,7 +109,7 @@
   margin-top: 1rem;
   padding: 0.75rem 1rem;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius);
 }
 
 .ocr-settings summary {
@@ -128,38 +128,6 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
   margin-top: 0.75rem;
-}
-
-.ocr-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  font-size: 0.8rem;
-}
-
-.ocr-field select,
-.ocr-field textarea {
-  padding: 0.45rem 0.6rem;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--bg);
-  color: var(--text-h);
-  font: inherit;
-  font-size: 0.82rem;
-}
-
-.ocr-field select {
-  max-width: 24rem;
-}
-
-.ocr-field textarea {
-  resize: vertical;
-  line-height: 1.45;
-}
-
-.ocr-field textarea.ocr-code {
-  font-family: var(--mono);
-  font-size: 0.78rem;
 }
 
 .ocr-error {
@@ -210,7 +178,7 @@
   width: 100%;
   height: 70vh;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--code-bg);
   box-sizing: border-box;
 }
@@ -230,7 +198,7 @@
   padding: 0.75rem;
   overflow: auto;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--code-bg);
   color: var(--text-h);
   font: 0.8rem/1.5 var(--mono);
@@ -261,4 +229,18 @@
   .ocr-result {
     height: 50vh;
   }
+}
+
+/* Champs : styles globaux (.field) ; seules les tailles propres à l'OCR. */
+.ocr-field select {
+  max-width: 24rem;
+}
+
+.ocr-field textarea {
+  line-height: 1.45;
+}
+
+.ocr-field textarea.ocr-code {
+  font-family: var(--mono);
+  font-size: 0.78rem;
 }

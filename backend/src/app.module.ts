@@ -22,6 +22,7 @@ import { CommandeModule } from './commande/commande.module.js';
 import { PlanningModule } from './planning/planning.module.js';
 import { PersonnelModule } from './personnel/personnel.module.js';
 import { PointageModule } from './pointage/pointage.module.js';
+import { ContratTravailModule } from './contrat-travail/contrat-travail.module.js';
 import { EntiteModule } from './entite/entite.module.js';
 import { VilleModule } from './ville/ville.module.js';
 import { PaysModule } from './pays/pays.module.js';
@@ -29,6 +30,7 @@ import { CategorieEnumerationModule } from './categorie-enumeration/categorie-en
 import { EnumerationModule } from './enumeration/enumeration.module.js';
 import { ConditionCmrModule } from './condition-cmr/condition-cmr.module.js';
 import { TypeFactureModule } from './type-facture/type-facture.module.js';
+import { DechetModule } from './dechet/dechet.module.js';
 import { DocumentTemplateModule } from './document-template/document-template.module.js';
 import { DocumentMergeModule } from './document-merge/document-merge.module.js';
 import { AuthModule } from './auth/auth.module.js';
@@ -55,6 +57,7 @@ import { AllExceptionsFilter } from './common/all-exceptions.filter.js';
     PlanningModule,
     PersonnelModule,
     PointageModule,
+    ContratTravailModule,
     EntiteModule,
     VilleModule,
     PaysModule,
@@ -62,6 +65,7 @@ import { AllExceptionsFilter } from './common/all-exceptions.filter.js';
     EnumerationModule,
     ConditionCmrModule,
     TypeFactureModule,
+    DechetModule,
     DocumentTemplateModule,
     DocumentMergeModule,
     MistralModule,

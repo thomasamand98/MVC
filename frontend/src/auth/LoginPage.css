@@ -14,7 +14,7 @@
   max-width: 380px;
   padding: 2rem 1.75rem;
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   background: var(--bg);
   box-shadow: var(--shadow);
   box-sizing: border-box;
@@ -34,65 +34,14 @@
   color: var(--text);
 }
 
-.login-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-h);
-}
-
+/* Écran d'accueil : champs et bouton un peu plus grands que dans les
+   fiches (styles de base : .field et .btn, voir styles/controls.css). */
 .login-field input {
   padding: 0.6rem 0.75rem;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--bg);
-  color: var(--text-h);
-  font: inherit;
   font-size: 0.95rem;
-  font-weight: 400;
-}
-
-.login-field input:focus {
-  outline: none;
-  border-color: #03c1ec;
-  box-shadow: 0 0 0 3px rgba(3, 193, 236, 0.15);
-}
-
-.login-error {
-  margin: 0;
-  padding: 0.55rem 0.75rem;
-  border: 1px solid var(--danger-border);
-  border-radius: 8px;
-  background: var(--danger-bg);
-  color: var(--danger);
-  font-size: 0.85rem;
 }
 
 .login-button {
   padding: 0.65rem 1rem;
-  border: none;
-  border-radius: 8px;
-  background: #03c1ec;
-  color: #fff;
-  font: inherit;
   font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.15s ease;
-}
-
-.login-button:hover:not(:disabled) {
-  opacity: 0.88;
-}
-
-.login-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.login-button:focus-visible {
-  outline: 2px solid #03c1ec;
-  outline-offset: 2px;
 }

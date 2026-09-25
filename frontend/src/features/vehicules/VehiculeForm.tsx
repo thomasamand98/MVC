@@ -1,13 +1,18 @@
-import { useState, type FormEvent } from 'react'
-import '../../components/PageActions.css'
+import { useMemo, useState, type FormEvent } from 'react'
 import type { VehiculeDetail } from './useVehicules.js'
 import type { Societe } from '../societes/useSocietes.js'
+import { useUnsavedForm } from '../../components/unsaved-changes/UnsavedChangesContext.js'
+import { FicheField, FicheSection } from '../../components/FicheLayout.js'
+import { FichePanel, FicheTabs } from '../../components/FicheTabs.js'
+import { useEnumerationLabels } from '../../lib/useEnumerationLabels.js'
+import './VehiculeForm.css'
+import { Dev } from '../enDeveloppement/Dev.js'
 
 // Champs scripturables d'un véhicule, mêmes clés que le CreateVehiculeDto
 // côté backend (backend/src/vehicule/vehicule.dto.ts) : IDSOCIETES en string
-// (BigInt non sérialisable côté JSON), dates en ISO string. Type est un code
-// numérique côté vrai modèle Prisma (pas de texte libre). Avec_compresseur
-// est un code 0/1 (pas un booléen).
+// (BigInt non sérialisable côté JSON, '' = aucune société), dates en ISO
+// string. Type est un code de l'énumération « type_vehicule » (1 Tracteur,
+// 2 Remorque...). Avec_compresseur est un code 0/1 (pas un booléen).
 export type VehiculeDto = {
   Type: number
   Marque: string
@@ -41,8 +46,7 @@ type Props = {
   onCancel: () => void
 }
 
-const fieldStyle = { display: 'flex', flexDirection: 'column' as const, gap: '0.25rem' }
-const inputStyle = { padding: '0.4rem 0.5rem', border: '1px solid var(--border)', borderRadius: '4px', background: 'var(--bg)', color: 'var(--text)' }
+type Tab = 'general' | 'documents'
 
 // Convertit une date ISO (renvoyée par l'API) en "AAAA-MM-JJ", format attendu
 // par <input type="date">.
@@ -51,13 +55,21 @@ function toDateInput(value: string | null | undefined): string {
   return value.slice(0, 10)
 }
 
+// Champs date de la fiche (clés de VehiculeDto dont la valeur est une date).
+type DateKey = {
+  [K in keyof VehiculeDto]: K extends `Date_${string}` ? K : never
+}[keyof VehiculeDto]
+
 // Formulaire de saisie utilisé par la modale de création/modification (voir
 // VehiculesPage.tsx). `initial` vaut null en création, sinon la fiche
 // complète du véhicule (GET /vehicules/:id, voir useVehicules.ts) chargée
-// par CrudPage avant l'ouverture de la modale.
+// par CrudPage avant l'ouverture de la modale. Mise en page reprise de
+// l'écran WinDev : Entreprise, puis cartes Identification et Documents.
+// Date_validite_assurance n'est pas affichée (absente de l'écran WinDev,
+// vide en base) mais reste conservée telle quelle.
 export function VehiculeForm({ initial, defaults, societes, onSubmit, onCancel }: Props) {
   const [form, setForm] = useState<VehiculeDto>({
-    Type: initial?.Type ?? 0,
+    Type: initial?.Type ?? 1,
     Marque: initial?.Marque ?? '',
     Modele: initial?.Modele ?? '',
     Num_police_assurance: initial?.Num_police_assurance ?? '',
@@ -70,16 +82,22 @@ export function VehiculeForm({ initial, defaults, societes, onSubmit, onCancel }
     Date_inspection_auto: toDateInput(initial?.Date_inspection_auto),
     Date_radiation_immatriculation: toDateInput(initial?.Date_radiation_immatriculation),
     Date_vente: toDateInput(initial?.Date_vente),
-    IDSOCIETES: initial?.IDSOCIETES ?? '',
+    IDSOCIETES: initial?.IDSOCIETES && initial.IDSOCIETES !== '0' ? initial.IDSOCIETES : '',
     Date_premiere_mise_en_circulation: toDateInput(initial?.Date_premiere_mise_en_circulation),
     Date_validite_tachygeaphe: toDateInput(initial?.Date_validite_tachygeaphe),
     Avec_compresseur: initial?.Avec_compresseur ?? 0,
     ...(initial ? {} : defaults),
   })
+  const [tab, setTab] = useState<Tab>('general')
   const [submitting, setSubmitting] = useState(false)
+  const types = useEnumerationLabels('type_vehicule')
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault()
+  const sortedSocietes = useMemo(
+    () => [...societes].sort((a, b) => (a.Nom_societe ?? '').localeCompare(b.Nom_societe ?? '', 'fr')),
+    [societes],
+  )
+
+  async function save() {
     setSubmitting(true)
     try {
       await onSubmit(form)
@@ -88,135 +106,105 @@ export function VehiculeForm({ initial, defaults, societes, onSubmit, onCancel }
     }
   }
 
+  // Quitter la fiche modifiée demande « Enregistrer / Annuler les
+  // modifications » (voir components/unsaved-changes/).
+  const { formRef, confirmLeave } = useUnsavedForm(form, save)
+
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault()
+    void save()
+  }
+
+  const set = <K extends keyof VehiculeDto>(key: K, value: VehiculeDto[K]) => setForm({ ...form, [key]: value })
+  const text = (key: Exclude<keyof VehiculeDto, DateKey | 'Type' | 'Avec_compresseur'>) => ({
+    value: form[key],
+    maxLength: 50,
+    onChange: (e: { target: { value: string } }) => set(key, e.target.value),
+  })
+  const date = (key: DateKey) => ({
+    type: 'date',
+    value: form[key],
+    onChange: (e: { target: { value: string } }) => set(key, e.target.value),
+  })
+
   return (
-    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginBottom: '0.5rem' }}>
-        <button type="button" className="page-actions-button secondary" onClick={onCancel}>Annuler</button>
-        <button type="submit" className="page-actions-button primary" disabled={submitting}>{submitting ? 'Enregistrement...' : 'Enregistrer'}</button>
+    <form ref={formRef} onSubmit={handleSubmit} className="form fiche">
+      <div className="form-actions">
+        <button type="button" className="btn" onClick={() => void confirmLeave(onCancel)}>Annuler</button>
+        <button type="submit" className="btn primary" disabled={submitting}>{submitting ? 'Enregistrement...' : 'Enregistrer'}</button>
       </div>
-      <label style={fieldStyle}>
-        N° d'immatriculation
-        <input style={inputStyle} value={form.Num_immat} onChange={(e) => setForm({ ...form, Num_immat: e.target.value })} />
-      </label>
-      <label style={fieldStyle}>
-        Type
-        <input type="number" style={inputStyle} value={form.Type} onChange={(e) => setForm({ ...form, Type: Number(e.target.value) })} />
-      </label>
-      <label style={fieldStyle}>
-        Marque
-        <input style={inputStyle} value={form.Marque} onChange={(e) => setForm({ ...form, Marque: e.target.value })} />
-      </label>
-      <label style={fieldStyle}>
-        Modèle
-        <input style={inputStyle} value={form.Modele} onChange={(e) => setForm({ ...form, Modele: e.target.value })} />
-      </label>
-      <label style={fieldStyle}>
-        Société
-        <select style={inputStyle} value={form.IDSOCIETES} onChange={(e) => setForm({ ...form, IDSOCIETES: e.target.value })}>
-          <option value="">—</option>
-          {societes.map((s) => (
-            <option key={s.IDSOCIETES} value={s.IDSOCIETES}>{s.Nom_societe}</option>
-          ))}
-        </select>
-      </label>
-      <label style={fieldStyle}>
-        N° police d'assurance
-        <input
-          style={inputStyle}
-          value={form.Num_police_assurance}
-          onChange={(e) => setForm({ ...form, Num_police_assurance: e.target.value })}
-        />
-      </label>
-      <label style={fieldStyle}>
-        Validité assurance
-        <input
-          type="date"
-          style={inputStyle}
-          value={form.Date_validite_assurance}
-          onChange={(e) => setForm({ ...form, Date_validite_assurance: e.target.value })}
-        />
-      </label>
-      <label style={fieldStyle}>
-        N° châssis
-        <input style={inputStyle} value={form.Num_chassis} onChange={(e) => setForm({ ...form, Num_chassis: e.target.value })} />
-      </label>
-      <label style={fieldStyle}>
-        N° licence transport
-        <input
-          style={inputStyle}
-          value={form.Num_licence_transport}
-          onChange={(e) => setForm({ ...form, Num_licence_transport: e.target.value })}
-        />
-      </label>
-      <label style={fieldStyle}>
-        Validité licence
-        <input
-          type="date"
-          style={inputStyle}
-          value={form.Date_validite_licence}
-          onChange={(e) => setForm({ ...form, Date_validite_licence: e.target.value })}
-        />
-      </label>
-      <label style={fieldStyle}>
-        Modification licence
-        <input
-          type="date"
-          style={inputStyle}
-          value={form.Date_modification_licence}
-          onChange={(e) => setForm({ ...form, Date_modification_licence: e.target.value })}
-        />
-      </label>
-      <label style={fieldStyle}>
-        Inspection auto
-        <input
-          type="date"
-          style={inputStyle}
-          value={form.Date_inspection_auto}
-          onChange={(e) => setForm({ ...form, Date_inspection_auto: e.target.value })}
-        />
-      </label>
-      <label style={fieldStyle}>
-        Validité tachygraphe
-        <input
-          type="date"
-          style={inputStyle}
-          value={form.Date_validite_tachygeaphe}
-          onChange={(e) => setForm({ ...form, Date_validite_tachygeaphe: e.target.value })}
-        />
-      </label>
-      <label style={fieldStyle}>
-        Date radiation immatriculation
-        <input
-          type="date"
-          style={inputStyle}
-          value={form.Date_radiation_immatriculation}
-          onChange={(e) => setForm({ ...form, Date_radiation_immatriculation: e.target.value })}
-        />
-      </label>
-      <label style={fieldStyle}>
-        Date de vente
-        <input type="date" style={inputStyle} value={form.Date_vente} onChange={(e) => setForm({ ...form, Date_vente: e.target.value })} />
-      </label>
-      <label style={fieldStyle}>
-        1ère mise en circulation
-        <input
-          type="date"
-          style={inputStyle}
-          value={form.Date_premiere_mise_en_circulation}
-          onChange={(e) => setForm({ ...form, Date_premiere_mise_en_circulation: e.target.value })}
-        />
-      </label>
-      <label style={fieldStyle}>
-        Avec compresseur
-        <select
-          style={inputStyle}
-          value={form.Avec_compresseur}
-          onChange={(e) => setForm({ ...form, Avec_compresseur: Number(e.target.value) })}
-        >
-          <option value={0}>Non</option>
-          <option value={1}>Oui</option>
-        </select>
-      </label>
+
+      <FicheTabs
+        ariaLabel="Sections de la fiche véhicule"
+        value={tab}
+        onChange={setTab}
+        tabs={[
+          { id: 'general', label: 'Général' },
+          { id: 'documents', label: 'Documents' },
+        ]}
+      />
+
+      <FichePanel active={tab === 'general'}>
+        <div className="veh-general">
+          <section className="fiche-section">
+            <FicheField label="Entreprise">
+              <select className="veh-societe" value={form.IDSOCIETES} onChange={(e) => set('IDSOCIETES', e.target.value)}>
+                <option value="" />
+                {/* Société liée pas encore dans la liste chargée. */}
+                {form.IDSOCIETES && !sortedSocietes.some((s) => s.IDSOCIETES === form.IDSOCIETES) && (
+                  <option value={form.IDSOCIETES}>{initial?.Societe?.Nom_societe ?? form.IDSOCIETES}</option>
+                )}
+                {sortedSocietes.map((s) => (
+                  <option key={s.IDSOCIETES} value={s.IDSOCIETES}>{s.Nom_societe}</option>
+                ))}
+              </select>
+            </FicheField>
+          </section>
+
+          <FicheSection title="Identification" className="fiche-section--center">
+            <div className="veh-grid">
+              <FicheField label="Type">
+                <select value={form.Type} onChange={(e) => set('Type', Number(e.target.value))}>
+                  {!(String(form.Type) in types) && <option value={form.Type}>{form.Type || ''}</option>}
+                  {Object.entries(types).map(([valeur, libelle]) => (
+                    <option key={valeur} value={valeur}>{libelle}</option>
+                  ))}
+                </select>
+              </FicheField>
+              <FicheField label="Marque"><input {...text('Marque')} /></FicheField>
+              <FicheField label="Modèle"><input {...text('Modele')} /></FicheField>
+              <FicheField label="N° de châssis"><input {...text('Num_chassis')} /></FicheField>
+              <FicheField label="N° d'immatriculation"><input {...text('Num_immat')} /></FicheField>
+              <FicheField label="Radiation de l'immatriculation"><input {...date('Date_radiation_immatriculation')} /></FicheField>
+              <FicheField label="Vente"><input {...date('Date_vente')} /></FicheField>
+              <label className="fiche-check veh-check">
+                <span className="field-label">Avec compresseur</span>
+                <input
+                  type="checkbox"
+                  checked={form.Avec_compresseur === 1}
+                  onChange={(e) => set('Avec_compresseur', e.target.checked ? 1 : 0)}
+                />
+              </label>
+            </div>
+          </FicheSection>
+
+          <FicheSection title="Documents" className="fiche-section--center">
+            <div className="veh-grid">
+              <FicheField label="N° licence transport"><input {...text('Num_licence_transport')} /></FicheField>
+              <FicheField label="Validité de la licence"><input {...date('Date_validite_licence')} /></FicheField>
+              <FicheField label="Modification de licence"><input {...date('Date_modification_licence')} /></FicheField>
+              <FicheField label="N° police d'assurance"><input {...text('Num_police_assurance')} /></FicheField>
+              <FicheField label="Première mise en circulation"><input {...date('Date_premiere_mise_en_circulation')} /></FicheField>
+              <FicheField label="Validité tachygraphe"><input {...date('Date_validite_tachygeaphe')} /></FicheField>
+              <FicheField label="Inspection auto"><input {...date('Date_inspection_auto')} /></FicheField>
+            </div>
+          </FicheSection>
+        </div>
+      </FichePanel>
+
+      <FichePanel active={tab === 'documents'}>
+        <Dev/>
+      </FichePanel>
     </form>
   )
 }

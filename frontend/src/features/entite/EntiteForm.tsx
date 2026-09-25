@@ -155,67 +155,67 @@ export function EntiteForm({ formId, form, smtpPasswordSet, smtpPlanningPassword
       {logoError && <p className="entite-logo-error">{logoError}</p>}
 
       <div className="entite-form-grid">
-        <label className="entite-field">
+        <label className="field">
           Nom
           <input value={form.Nom_societe} onChange={(e) => onChange({ ...form, Nom_societe: e.target.value })} />
         </label>
-        <label className="entite-field">
+        <label className="field">
           Téléphone
           <input value={form.Num_Telephone} onChange={(e) => onChange({ ...form, Num_Telephone: e.target.value })} />
         </label>
-        <label className="entite-field">
+        <label className="field">
           Nom de la Banque
           <input value={form.Nom_Banque} onChange={(e) => onChange({ ...form, Nom_Banque: e.target.value })} />
         </label>
 
-        <label className="entite-field">
+        <label className="field">
           Nom court
           <input value={form.Nom_court} onChange={(e) => onChange({ ...form, Nom_court: e.target.value })} />
         </label>
-        <label className="entite-field">
+        <label className="field">
           Email
           <input type="email" value={form.Email_contact} onChange={(e) => onChange({ ...form, Email_contact: e.target.value })} />
         </label>
-        <label className="entite-field">
+        <label className="field">
           IBAN
           <input value={form.Iban} onChange={(e) => onChange({ ...form, Iban: e.target.value })} />
         </label>
 
-        <label className="entite-field">
+        <label className="field">
           Adresse 1
           <input value={form.Adresse1} onChange={(e) => onChange({ ...form, Adresse1: e.target.value })} />
         </label>
-        <label className="entite-field">
+        <label className="field">
           N° TVA
           <input value={form.Num_TVA} onChange={(e) => onChange({ ...form, Num_TVA: e.target.value })} />
         </label>
-        <label className="entite-field">
+        <label className="field">
           BIC
           <input value={form.Bic} onChange={(e) => onChange({ ...form, Bic: e.target.value })} />
         </label>
 
-        <label className="entite-field">
+        <label className="field">
           Adresse 2
           <input value={form.Adresse2} onChange={(e) => onChange({ ...form, Adresse2: e.target.value })} />
         </label>
-        <label className="entite-field">
+        <label className="field">
           Nom du signataire
           <input value={form.Signataire} onChange={(e) => onChange({ ...form, Signataire: e.target.value })} />
         </label>
-        <label className="entite-field">
+        <label className="field">
           Numéro UCM
           <input value={form.numero_ucm} onChange={(e) => onChange({ ...form, numero_ucm: e.target.value })} />
         </label>
 
-        <label className="entite-field">
+        <label className="field">
           Adresse 3
           <input value={form.Adresse3} onChange={(e) => onChange({ ...form, Adresse3: e.target.value })} />
         </label>
-        <label className="entite-field">
+        <label className="field">
           Numéro de licence
           <input value={form.Num_licence} onChange={(e) => onChange({ ...form, Num_licence: e.target.value })} />
         </label>
-        <label className="entite-field">
+        <label className="field">
           Valeur faciale chèque repas
           <input
             type="number"
@@ -226,11 +226,11 @@ export function EntiteForm({ formId, form, smtpPasswordSet, smtpPlanningPassword
         </label>
 
         <div className="entite-field-group">
-          <label className="entite-field">
+          <label className="field">
             Code postal
             <input value={form.CP} onChange={(e) => onChange({ ...form, CP: e.target.value })} />
           </label>
-          <label className="entite-field">
+          <label className="field">
             Villes
             <select value={form.Localite} onChange={(e) => onChange({ ...form, Localite: e.target.value })}>
               <option value="">—</option>
@@ -243,7 +243,7 @@ export function EntiteForm({ formId, form, smtpPasswordSet, smtpPlanningPassword
           </label>
         </div>
 
-        <label className="entite-field">
+        <label className="field">
           Pays
           <select value={form.Pays_full_name} onChange={(e) => handlePaysChange(e.target.value)}>
             <option value="">—</option>
@@ -264,22 +264,22 @@ export function EntiteForm({ formId, form, smtpPasswordSet, smtpPlanningPassword
         <span className="entite-column-title">E-mail planning</span>
 
         <div className="entite-field-group">
-          <label className="entite-field">
+          <label className="field">
             Serveur :
             <input value={form.Seveur_SMTP} onChange={(e) => onChange({ ...form, Seveur_SMTP: e.target.value })} />
           </label>
         </div>
-        <label className="entite-field">
+        <label className="field">
           Utilisateur :
           <input value={form.Utilisateur_SMTP} onChange={(e) => onChange({ ...form, Utilisateur_SMTP: e.target.value })} />
         </label>
-        <label className="entite-field">
+        <label className="field">
           Utilisateur :
           <input value={form.Utilisateur_smtp_planning} onChange={(e) => onChange({ ...form, Utilisateur_smtp_planning: e.target.value })} />
         </label>
 
         <div className="entite-field-group">
-          <label className="entite-field">
+          <label className="field">
             Connexion SMTP :
             <select
               value={form.TypeConnexion_SMTP}
@@ -292,12 +292,12 @@ export function EntiteForm({ formId, form, smtpPasswordSet, smtpPlanningPassword
               ))}
             </select>
           </label>
-          <label className="entite-field entite-field-narrow">
+          <label className="field entite-field-narrow">
             Port SMTP :
             <input type="number" value={form.Port_SMTP} onChange={(e) => onChange({ ...form, Port_SMTP: Number(e.target.value) })} />
           </label>
         </div>
-        <label className="entite-field">
+        <label className="field">
           Mot de passe :
           <input
             type="password"
@@ -307,7 +307,7 @@ export function EntiteForm({ formId, form, smtpPasswordSet, smtpPlanningPassword
             onChange={(e) => onChange({ ...form, MDP_SMTP: e.target.value })}
           />
         </label>
-        <label className="entite-field">
+        <label className="field">
           Mot de passe :
           <input
             type="password"

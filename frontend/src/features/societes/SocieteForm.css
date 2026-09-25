@@ -5,43 +5,6 @@
   min-width: 0;
 }
 
-/* Onglets de haut niveau (Principale/Contacts/Contrats/Documents/Messages)
-   — même style de pastille que TabBar.css/ViewModeSelector.css pour rester
-   cohérent avec le reste de l'appli. */
-.societe-form-toptabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 0.6rem;
-}
-
-.societe-form-toptab {
-  border: 1px solid transparent;
-  border-radius: 7px;
-  background: none;
-  color: var(--text);
-  padding: 0.35rem 0.7rem;
-  font-family: inherit;
-  font-size: 0.85rem;
-  cursor: pointer;
-}
-
-.societe-form-toptab:hover:not(:disabled) {
-  background: var(--accent-bg);
-  color: var(--accent);
-}
-
-.societe-form-toptab.active {
-  background: var(--accent);
-  color: #fff;
-}
-
-.societe-form-toptab:disabled {
-  cursor: not-allowed;
-  opacity: 0.4;
-}
-
 .societe-form-principale {
   display: flex;
   flex-direction: column;
@@ -69,7 +32,7 @@
 
 .societe-form-billing {
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 0.85rem;
 }
 
@@ -79,43 +42,10 @@
   color: var(--text-h);
 }
 
-.societe-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  font-size: 0.85rem;
-  color: var(--text-h);
-  min-width: 0;
-}
-
-.societe-field input,
-.societe-field select,
-.societe-field textarea {
-  padding: 0.4rem 0.5rem;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--bg);
-  color: var(--text);
-  font-family: inherit;
-  font-size: 0.9rem;
-}
-
-.societe-field textarea {
-  resize: vertical;
-}
-
 .societe-field-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 0.6rem;
-}
-
-.societe-checkbox {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  font-size: 0.85rem;
-  color: var(--text-h);
 }
 
 .societe-form-hint {
@@ -124,42 +54,10 @@
   color: var(--text);
 }
 
-/* Sous-onglets Client/Fournisseur, à l'intérieur du bloc facturation. */
-.societe-billing-tabs {
-  display: flex;
-  gap: 0.25rem;
-  margin-bottom: 0.75rem;
-}
-
-.societe-billing-tab {
-  flex: 1;
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  background: var(--code-bg);
-  color: var(--text);
-  padding: 0.4rem 0.6rem;
-  font-family: inherit;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.societe-billing-tab.active {
-  background: var(--accent-bg);
-  border-color: var(--accent-border);
-  color: var(--accent);
-}
-
 .societe-billing-panel {
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
-}
-
-.societe-form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
 }
 
 /* Onglets Contacts/Contrats/Messages : tables standard (CrudPage /

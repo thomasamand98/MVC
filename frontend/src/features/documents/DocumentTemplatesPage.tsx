@@ -6,8 +6,8 @@ import { CopyIcon, DocumentIcon, PlusIcon, TrashIcon } from './icons.js'
 import { useApiMutation } from '../../lib/useApiMutation.js'
 import { STARTER_CONTENT_HTML, STARTER_FOOTER_HTML, STARTER_HEADER_HTML } from './starterTemplate.js'
 import { DOCUMENT_TYPES, DOCUMENT_TYPE_LABELS, type DocumentTemplateDetail, type DocumentTemplateDto, type DocumentType } from './types.js'
-import '../../components/PageActions.css'
 import './DocumentTemplatesPage.css'
+import { useConfirmLeave, useUnsavedForm } from '../../components/unsaved-changes/UnsavedChangesContext.js'
 
 function formatDate(iso: string | null): string {
   return iso ? new Date(iso).toLocaleString('fr-BE', { dateStyle: 'medium', timeStyle: 'short' }) : '—'
@@ -32,19 +32,18 @@ export function DocumentTemplatesPage() {
   // demande initiale — un modèle de facture n'a pas la même mise en page
   // qu'un modèle de contrat).
   const [creating, setCreating] = useState(false)
-  const [newNom, setNewNom] = useState('')
-  const [newType, setNewType] = useState<DocumentType>(DOCUMENT_TYPES[0])
+  // Retour à la liste depuis l'éditeur : l'onglet contient l'éditeur, sa
+  // zone suffit à vérifier une saisie en cours.
+  const confirmLeave = useConfirmLeave()
 
   function openCreateModal() {
-    setNewNom('')
-    setNewType(DOCUMENT_TYPES[0])
     setCreating(true)
   }
 
-  async function handleCreate() {
+  async function handleCreate(nom: string, type: DocumentType) {
     const created = await create({
-      Nom: newNom.trim() || 'Nouveau modèle',
-      Type_document: newType,
+      Nom: nom.trim() || 'Nouveau modèle',
+      Type_document: type,
       Description: '',
       Contenu_entete: STARTER_HEADER_HTML,
       Contenu_html: STARTER_CONTENT_HTML,
@@ -117,7 +116,7 @@ export function DocumentTemplatesPage() {
       <div className="dtp-editor-page">
         <div className="page-header">
           <div className="dtp-editor-title">
-            <button type="button" className="dtp-button" onClick={() => setOpen(null)}>&larr; Modèles</button>
+            <button type="button" className="btn" onClick={async () => { if (await confirmLeave()) setOpen(null) }}>&larr; Modèles</button>
             <input
               className="dtp-name-input"
               value={nameDraft}
@@ -143,7 +142,7 @@ export function DocumentTemplatesPage() {
       <div className="page-header">
         <h2>Modèles de documents</h2>
         <div className="page-actions">
-          <button type="button" className="page-actions-button primary" onClick={openCreateModal}>
+          <button type="button" className="btn primary" onClick={openCreateModal}>
             <PlusIcon />
             Nouveau modèle
           </button>
@@ -157,7 +156,7 @@ export function DocumentTemplatesPage() {
         <div className="dtp-empty">
           <DocumentIcon />
           <p>Aucun modèle pour l’instant. Créez-en un pour définir la mise en page d’un document (état de contrat, facture…) et y glisser les champs de fusion.</p>
-          <button type="button" className="page-actions-button primary" onClick={openCreateModal}>Nouveau modèle</button>
+          <button type="button" className="btn primary" onClick={openCreateModal}>Nouveau modèle</button>
         </div>
       ) : (
         <div className="dtp-grid">
@@ -174,9 +173,9 @@ export function DocumentTemplatesPage() {
                 <p className="dtp-card-date">Modifié le {formatDate(template.Date_heure_modification)}</p>
               </div>
               <div className="dtp-card-actions">
-                <button type="button" className="dtp-button" onClick={() => handleOpen(template.IDDOCUMENT_TEMPLATES)}>Ouvrir</button>
-                <button type="button" className="dtp-icon-button" title="Dupliquer" onClick={() => handleDuplicate(template.IDDOCUMENT_TEMPLATES)}><CopyIcon /></button>
-                <button type="button" className="dtp-icon-button danger" title="Supprimer" onClick={() => handleDelete(template.IDDOCUMENT_TEMPLATES)}><TrashIcon /></button>
+                <button type="button" className="btn" onClick={() => handleOpen(template.IDDOCUMENT_TEMPLATES)}>Ouvrir</button>
+                <button type="button" className="icon-btn" title="Dupliquer" onClick={() => handleDuplicate(template.IDDOCUMENT_TEMPLATES)}><CopyIcon /></button>
+                <button type="button" className="icon-btn danger" title="Supprimer" onClick={() => handleDelete(template.IDDOCUMENT_TEMPLATES)}><TrashIcon /></button>
               </div>
             </div>
           ))}
@@ -185,32 +184,46 @@ export function DocumentTemplatesPage() {
 
       {creating && (
         <Modal title="Nouveau modèle" onClose={() => setCreating(false)}>
-          <form
-            className="dtp-create-form"
-            onSubmit={(e) => {
-              e.preventDefault()
-              handleCreate()
-            }}
-          >
-            <label className="dtp-create-field">
-              Nom du modèle
-              <input value={newNom} onChange={(e) => setNewNom(e.target.value)} placeholder="Ex. État de contrat" autoFocus />
-            </label>
-            <label className="dtp-create-field">
-              Type de document
-              <select value={newType} onChange={(e) => setNewType(e.target.value as DocumentType)}>
-                {DOCUMENT_TYPES.map((type) => (
-                  <option key={type} value={type}>{DOCUMENT_TYPE_LABELS[type]}</option>
-                ))}
-              </select>
-            </label>
-            <div className="dtp-create-actions">
-              <button type="button" className="dtp-button" onClick={() => setCreating(false)}>Annuler</button>
-              <button type="submit" className="page-actions-button primary">Créer</button>
-            </div>
-          </form>
+          <NewTemplateForm onCreate={handleCreate} onCancel={() => setCreating(false)} />
         </Modal>
       )}
     </div>
+  )
+}
+
+// Formulaire de la modale « Nouveau modèle ». Composant à part pour repartir
+// de zéro à chaque ouverture et suivre sa saisie (voir
+// components/unsaved-changes/).
+function NewTemplateForm({ onCreate, onCancel }: { onCreate: (nom: string, type: DocumentType) => Promise<void>; onCancel: () => void }) {
+  const [nom, setNom] = useState('')
+  const [type, setType] = useState<DocumentType>(DOCUMENT_TYPES[0])
+  const { formRef, confirmLeave } = useUnsavedForm({ nom, type }, () => onCreate(nom, type))
+
+  return (
+    <form
+      ref={formRef}
+      className="dtp-create-form"
+      onSubmit={(e) => {
+        e.preventDefault()
+        void onCreate(nom, type)
+      }}
+    >
+      <label className="field">
+        Nom du modèle
+        <input value={nom} onChange={(e) => setNom(e.target.value)} placeholder="Ex. État de contrat" autoFocus />
+      </label>
+      <label className="field">
+        Type de document
+        <select value={type} onChange={(e) => setType(e.target.value as DocumentType)}>
+          {DOCUMENT_TYPES.map((option) => (
+            <option key={option} value={option}>{DOCUMENT_TYPE_LABELS[option]}</option>
+          ))}
+        </select>
+      </label>
+      <div className="form-actions">
+        <button type="button" className="btn" onClick={() => void confirmLeave(onCancel)}>Annuler</button>
+        <button type="submit" className="btn primary">Créer</button>
+      </div>
+    </form>
   )
 }

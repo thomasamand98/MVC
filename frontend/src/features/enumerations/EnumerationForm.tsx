@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import type { Enumeration, EnumerationDto } from './useEnumerations.js'
+import { useUnsavedForm } from '../../components/unsaved-changes/UnsavedChangesContext.js'
 
 type Props = {
   categorieId: string
@@ -26,8 +27,7 @@ export function EnumerationForm({ categorieId, defaultOrdre, initial, onSubmit, 
   const [submitting, setSubmitting] = useState(false)
   const isSystem = Boolean(initial?.Valeur_system)
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault()
+  async function save() {
     setSubmitting(true)
     try {
       await onSubmit(form)
@@ -36,9 +36,18 @@ export function EnumerationForm({ categorieId, defaultOrdre, initial, onSubmit, 
     }
   }
 
+  // Quitter la fiche modifiée demande « Enregistrer / Annuler les
+  // modifications » (voir components/unsaved-changes/).
+  const { formRef, confirmLeave } = useUnsavedForm(form, save)
+
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault()
+    void save()
+  }
+
   return (
-    <form onSubmit={handleSubmit} className="enum-form">
-      <label className="enum-field">
+    <form ref={formRef} onSubmit={handleSubmit} className="enum-form">
+      <label className="field">
         Valeur affichée
         <input
           value={form.Valeur_affiche}
@@ -48,7 +57,7 @@ export function EnumerationForm({ categorieId, defaultOrdre, initial, onSubmit, 
           autoFocus
         />
       </label>
-      <label className="enum-field">
+      <label className="field">
         Valeur
         <input
           value={form.Valeur}
@@ -56,9 +65,9 @@ export function EnumerationForm({ categorieId, defaultOrdre, initial, onSubmit, 
           maxLength={150}
           disabled={isSystem}
         />
-        {isSystem && <span className="enum-field-hint">Valeur système : la valeur ne peut pas être modifiée.</span>}
+        {isSystem && <span className="field-hint">Valeur système : la valeur ne peut pas être modifiée.</span>}
       </label>
-      <label className="enum-field">
+      <label className="field">
         Valeur associée
         <input
           value={form.Valeur_associee}
@@ -66,7 +75,7 @@ export function EnumerationForm({ categorieId, defaultOrdre, initial, onSubmit, 
           maxLength={150}
         />
       </label>
-      <label className="enum-field enum-field-narrow">
+      <label className="field enum-field-narrow">
         Ordre
         <input
           type="number"
@@ -81,13 +90,13 @@ export function EnumerationForm({ categorieId, defaultOrdre, initial, onSubmit, 
           onChange={(e) => setForm({ ...form, Valeur_system: e.target.checked ? 1 : 0 })}
         />
         Valeur système
-        <span className="enum-field-hint">Utilisée par l'application : elle ne peut pas être supprimée.</span>
+        <span className="field-hint">Utilisée par l'application : elle ne peut pas être supprimée.</span>
       </label>
-      <div className="enum-form-actions">
-        <button type="button" className="enum-button" onClick={onCancel}>
+      <div className="form-actions">
+        <button type="button" className="btn" onClick={() => void confirmLeave(onCancel)}>
           Annuler
         </button>
-        <button type="submit" className="enum-button primary" disabled={submitting}>
+        <button type="submit" className="btn primary" disabled={submitting}>
           {submitting ? 'Enregistrement...' : 'Enregistrer'}
         </button>
       </div>

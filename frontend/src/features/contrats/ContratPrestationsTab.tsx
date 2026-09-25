@@ -14,7 +14,7 @@ type Props = {
 export function ContratPrestationsTab({ prestations }: Props) {
   const unites = useEnumerationLabels('unite_prestation')
 
-  if (prestations.length === 0) return <p className="contrat-muted">Aucune prestation sur ce contrat.</p>
+  if (prestations.length === 0) return <p className="muted">Aucune prestation sur ce contrat.</p>
 
   return (
     <div className="contrat-table-wrapper">

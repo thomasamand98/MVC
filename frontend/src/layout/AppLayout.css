@@ -19,7 +19,7 @@
   height: 2.25rem;
   flex-shrink: 0;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--bg);
   color: var(--text-h);
   cursor: pointer;

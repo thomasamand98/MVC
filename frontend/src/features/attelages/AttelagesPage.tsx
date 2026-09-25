@@ -6,6 +6,7 @@ import { AttelageForm, type AttelageDto } from './AttelageForm.js'
 import { useApiMutation } from '../../lib/useApiMutation.js'
 import { useChauffeurs } from '../chauffeurs/useChauffeurs.js'
 import { useVehicules } from '../vehicules/useVehicules.js'
+import { useSocietes } from '../societes/useSocietes.js'
 import { projectionFilters, type ProjectionView } from '../../components/projection/relations.js'
 
 const DEFAULT_PAGE_SIZE = 25
@@ -20,10 +21,12 @@ export function AttelagesPage({ projection }: { projection?: ProjectionView } = 
   const { attelages, setAttelages, loading, error, refetch, total } = useAttelages({ page, pageSize, search, filters: projectionFilters(projection) })
   const { create, update, remove } = useApiMutation<AttelageDto, Attelage>('attelages')
   // Chargées ici (une fois, tant que l'onglet Attelages reste monté) et
-  // passées au formulaire pour les sélecteurs Chauffeur/Tracteur/Remorque —
+  // passées au formulaire pour les sélecteurs Chauffeur/Tracteur/Remorque/
+  // Société —
   // évite de les recharger à chaque ouverture de la modale.
   const { chauffeurs } = useChauffeurs()
   const { vehicules } = useVehicules()
+  const { societes } = useSocietes()
 
   return (
     <CrudPage<Attelage, AttelageDto>
@@ -34,7 +37,7 @@ export function AttelagesPage({ projection }: { projection?: ProjectionView } = 
       loading={loading}
       error={error}
       columns={columns}
-      getRowId={(a) => a.IDATTELAGE}
+      getRowId={(a) => a.IDATTELAGE_REFERENCE}
       create={create}
       update={update}
       remove={remove}
@@ -55,7 +58,7 @@ export function AttelagesPage({ projection }: { projection?: ProjectionView } = 
       heading={projection?.heading}
       newRecordScope={projection ? `projection:${projection.source}:${projection.ids.join(',')}` : undefined}
       renderForm={({ initial, onSubmit, onCancel }) => (
-        <AttelageForm initial={initial} defaults={projection?.defaults} chauffeurs={chauffeurs} vehicules={vehicules} onSubmit={onSubmit} onCancel={onCancel} />
+        <AttelageForm initial={initial} defaults={projection?.defaults} chauffeurs={chauffeurs} vehicules={vehicules} societes={societes} onSubmit={onSubmit} onCancel={onCancel} />
       )}
     />
   )

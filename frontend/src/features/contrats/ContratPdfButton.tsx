@@ -48,7 +48,7 @@ export function ContratPdfButton({ contratId, templates }: Props) {
   if (templates.length === 0) {
     return (
       <span className="contrat-pdf" title="Créez d’abord un modèle de contrat dans Gestion documentaire">
-        <button type="button" className="contrat-button" disabled>Voir le PDF</button>
+        <button type="button" className="btn" disabled>Voir le PDF</button>
       </span>
     )
   }
@@ -56,13 +56,13 @@ export function ContratPdfButton({ contratId, templates }: Props) {
   return (
     <span className="contrat-pdf">
       {templates.length > 1 && (
-        <select className="contrat-pdf-select" value={templateId} onChange={(e) => setTemplateId(e.target.value)} aria-label="Modèle de document">
+        <select className="control contrat-pdf-select" value={templateId} onChange={(e) => setTemplateId(e.target.value)} aria-label="Modèle de document">
           {templates.map((t) => (
             <option key={t.IDDOCUMENT_TEMPLATES} value={t.IDDOCUMENT_TEMPLATES}>{t.Nom}</option>
           ))}
         </select>
       )}
-      <button type="button" className="contrat-button" onClick={handleView} disabled={loading}>
+      <button type="button" className="btn" onClick={handleView} disabled={loading}>
         {loading ? 'Génération...' : 'Voir le PDF'}
       </button>
       {error && <span className="contrat-pdf-error">{error}</span>}

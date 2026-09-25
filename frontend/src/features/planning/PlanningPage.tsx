@@ -230,7 +230,7 @@ export function PlanningPage() {
         <div className="pl-toolbar-group">
           <button
             type="button"
-            className={`pl-icon-btn pl-side-toggle${sidebarOpen ? ' is-active' : ''}`}
+            className={`icon-btn outlined pl-side-toggle${sidebarOpen ? ' is-active' : ''}`}
             onClick={() => setSidebarOpen((open) => !open)}
             aria-pressed={sidebarOpen}
             aria-label={sidebarOpen ? 'Masquer le panneau des commandes' : 'Afficher le panneau des commandes'}
@@ -242,7 +242,7 @@ export function PlanningPage() {
         </div>
 
         <div className="pl-toolbar-group pl-period" role="group" aria-label="Période du planning">
-          <button type="button" className="pl-icon-btn" onClick={() => shiftPeriod(-1)} aria-label="Période précédente"><ChevronLeftIcon /></button>
+          <button type="button" className="icon-btn outlined" onClick={() => shiftPeriod(-1)} aria-label="Période précédente"><ChevronLeftIcon /></button>
           <label className="pl-date">
             <span>Du</span>
             <span className="pl-date-weekday">{formatWeekday(from)}</span>
@@ -253,8 +253,8 @@ export function PlanningPage() {
             <span className="pl-date-weekday">{formatWeekday(to)}</span>
             <input type="date" value={toInputValue(to)} onChange={(e) => changeTo(e.target.value)} />
           </label>
-          <button type="button" className="pl-icon-btn" onClick={() => shiftPeriod(1)} aria-label="Période suivante"><ChevronRightIcon /></button>
-          <button type="button" className="pl-btn" onClick={resetToCurrentWeek}>Cette semaine</button>
+          <button type="button" className="icon-btn outlined" onClick={() => shiftPeriod(1)} aria-label="Période suivante"><ChevronRightIcon /></button>
+          <button type="button" className="btn sm" onClick={resetToCurrentWeek}>Cette semaine</button>
         </div>
 
         <div className="pl-toolbar-group">
@@ -304,7 +304,7 @@ export function PlanningPage() {
           {!data && !loading && planning.error && (
             <div className="pl-board-message" role="alert">
               <p>{planning.error}</p>
-              <button type="button" className="pl-btn" onClick={planning.reload}>Réessayer</button>
+              <button type="button" className="btn sm" onClick={planning.reload}>Réessayer</button>
             </div>
           )}
           {data && resources.length === 0 && (

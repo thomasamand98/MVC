@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { useAuth } from '../auth/AuthContext.js'
+import { useConfirmLeave } from '../components/unsaved-changes/UnsavedChangesContext.js'
 import './Sidebar.css'
 
 export type MenuItem = {
@@ -43,6 +44,9 @@ type SidebarProps = {
 // `open`/`onClose`) : sélectionner un item la referme automatiquement.
 export function Sidebar({ nodes, activeId, onSelect, open, onClose }: SidebarProps) {
   const { login, canSignOut, signOut } = useAuth()
+  // Se déconnecter quitte toutes les saisies ouvertes : la sidebar est hors
+  // des onglets, sa zone est celle de toute l'application.
+  const confirmLeave = useConfirmLeave()
   const [openGroups, setOpenGroups] = useState<Set<string>>(
     () =>
       new Set(
@@ -122,7 +126,7 @@ export function Sidebar({ nodes, activeId, onSelect, open, onClose }: SidebarPro
         {canSignOut && (
           <div className="sidebar-user">
             <span className="sidebar-user-name" title={login}>{login}</span>
-            <button type="button" className="sidebar-logout" onClick={() => void signOut()}>
+            <button type="button" className="sidebar-logout" onClick={async () => { if (await confirmLeave()) await signOut() }}>
               Se déconnecter
             </button>
           </div>

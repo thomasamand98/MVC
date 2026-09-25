@@ -13,7 +13,7 @@ type Props = {
 export function ContratFacturesTab({ factures }: Props) {
   const etats = useEnumerationLabels('etat_facture')
 
-  if (factures.length === 0) return <p className="contrat-muted">Aucune facture sur ce contrat.</p>
+  if (factures.length === 0) return <p className="muted">Aucune facture sur ce contrat.</p>
 
   return (
     <div className="contrat-table-wrapper">

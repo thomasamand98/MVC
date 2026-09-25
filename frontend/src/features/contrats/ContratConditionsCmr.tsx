@@ -76,7 +76,7 @@ export function ContratConditionsCmr({ contratId, conditions, onChange }: Props)
   return (
     <div className="contrat-conditions">
       <div className="contrat-conditions-add">
-        <label className="contrat-field contrat-conditions-libelle">
+        <label className="field contrat-conditions-libelle">
           Condition
           <input
             value={libelle}
@@ -94,13 +94,13 @@ export function ContratConditionsCmr({ contratId, conditions, onChange }: Props)
             placeholder={disabled ? 'Enregistrez d’abord le contrat' : 'Ajouter une condition'}
           />
         </label>
-        <label className="contrat-checkbox contrat-conditions-box">
+        <label className="checkbox contrat-checkbox contrat-conditions-box">
           <input type="checkbox" checked={boite} onChange={(e) => setBoite(e.target.checked)} disabled={disabled} />
           Case à cocher
         </label>
         <button
           type="button"
-          className="contrat-icon-button primary"
+          className="icon-btn primary"
           onClick={handleAdd}
           disabled={disabled || busy || libelle.trim() === ''}
           aria-label="Ajouter la condition"
@@ -111,19 +111,19 @@ export function ContratConditionsCmr({ contratId, conditions, onChange }: Props)
       </div>
 
       {conditions.length === 0 ? (
-        <p className="contrat-muted">Aucune condition CMR.</p>
+        <p className="muted">Aucune condition CMR.</p>
       ) : (
         <ul className="contrat-conditions-list">
           {conditions.map((c) => (
             <li key={c.IDCONDITIONS_CMR} className="contrat-conditions-item">
               <span className="contrat-conditions-text">{c.Libelle}</span>
-              <label className="contrat-checkbox" title="Case à cocher">
+              <label className="checkbox contrat-checkbox" title="Case à cocher">
                 <input type="checkbox" checked={Boolean(c.Boite_a_cocher)} onChange={() => handleToggle(c)} disabled={busy} />
-                <span className="contrat-sr-only">Case à cocher</span>
+                <span className="sr-only">Case à cocher</span>
               </label>
               <button
                 type="button"
-                className="contrat-icon-button danger"
+                className="icon-btn danger"
                 onClick={() => handleDelete(c)}
                 disabled={busy}
                 aria-label="Supprimer la condition"

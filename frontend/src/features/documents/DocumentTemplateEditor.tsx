@@ -3,8 +3,8 @@ import { MergeFieldPalette } from './MergeFieldPalette.js'
 import { EditorToolbar } from './EditorToolbar.js'
 import { findFieldByPath, findGroupById, type MergeField, type MergeFieldGroup } from './mergeFields.js'
 import { DRAG_MIME, createChipElement, createRepeatBlockElement, insertBlockNode, insertInlineNodeAtRange, rangeFromPoint, type DragPayload } from './domInsert.js'
-import '../../components/PageActions.css'
 import './DocumentTemplateEditor.css'
+import { useLeaveGuard } from '../../components/unsaved-changes/UnsavedChangesContext.js'
 
 export type TemplateZoneHtml = { headerHtml: string; contentHtml: string; footerHtml: string }
 
@@ -334,6 +334,10 @@ export function DocumentTemplateEditor({ initial, onSave, onCancel, saving }: Pr
     setDirty(false)
   }
 
+  // Quitter l'éditeur modifié (Fermer, retour à la liste, fermeture de
+  // l'onglet) demande « Enregistrer / Annuler les modifications ».
+  const confirmLeave = useLeaveGuard({ isDirty: () => dirty, save: handleSave })
+
   function handleReset() {
     if (!window.confirm('Réinitialiser le modèle avec la mise en page de départ ? Les modifications non enregistrées seront perdues.')) return
     setCodeZone(null)
@@ -409,9 +413,9 @@ export function DocumentTemplateEditor({ initial, onSave, onCancel, saving }: Pr
       </div>
       <div className="dte-actions">
         <span className="dte-dirty-hint">{dirty ? 'Modifications non enregistrées' : 'Tout est enregistré'}</span>
-        <button type="button" className="dte-button" onClick={handleReset}>Réinitialiser</button>
-        <button type="button" className="dte-button" onClick={onCancel}>Fermer</button>
-        <button type="button" className="page-actions-button primary" onClick={handleSave} disabled={saving}>
+        <button type="button" className="btn" onClick={handleReset}>Réinitialiser</button>
+        <button type="button" className="btn" onClick={() => void confirmLeave(onCancel)}>Fermer</button>
+        <button type="button" className="btn primary" onClick={handleSave} disabled={saving}>
           {saving ? 'Enregistrement...' : 'Enregistrer'}
         </button>
       </div>

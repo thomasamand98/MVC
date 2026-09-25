@@ -1,12 +1,18 @@
-import { useState, type FormEvent } from 'react'
-import '../../components/PageActions.css'
+import { useMemo, useState, type FormEvent } from 'react'
 import type { Chauffeur } from './useChauffeurs.js'
 import type { Societe } from '../societes/useSocietes.js'
+import type { Personnel } from '../personnel/usePersonnel.js'
+import { useUnsavedForm } from '../../components/unsaved-changes/UnsavedChangesContext.js'
+import { FicheField, FicheSwitch } from '../../components/FicheLayout.js'
+import { useEnumerationLabels } from '../../lib/useEnumerationLabels.js'
+import './ChauffeurForm.css'
 
 // Champs scripturables d'un chauffeur, mêmes clés que le
 // CreateChauffeurDto côté backend (backend/src/chauffeur/chauffeur.dto.ts) :
-// IDPERSONNELS/IDSOCIETES en string (BigInt non sérialisable côté JSON).
-// Archive est un code 0/1 côté vrai modèle Prisma (pas un booléen).
+// IDPERSONNELS/IDSOCIETES en string (BigInt non sérialisable côté JSON),
+// '' = aucun lien. Categorie est la `Valeur` d'une entrée de l'énumération
+// « categorie_chauffeur ». Archive est un code 0/1 côté vrai modèle Prisma
+// (pas un booléen).
 export type ChauffeurDto = {
   Nom_chauffeur: string
   Telephone: string
@@ -21,35 +27,59 @@ type Props = {
   // Valeurs préremplies en création (projection depuis une seule ligne,
   // voir components/projection/relations.ts) — ignorées en modification.
   defaults?: Partial<ChauffeurDto>
-  // Liste des sociétés pour le sélecteur — chargée par ChauffeursPage et
-  // passée en prop plutôt que rechargée ici, pour ne pas refaire un GET
-  // /societes à chaque ouverture de la modale.
+  // Listes des sociétés et du personnel pour les sélecteurs — chargées par
+  // ChauffeursPage et passées en prop plutôt que rechargées ici, pour ne
+  // pas refaire les GET à chaque ouverture de la modale.
   societes: Societe[]
+  personnel: Personnel[]
   onSubmit: (dto: ChauffeurDto) => Promise<void>
   onCancel: () => void
 }
 
-const fieldStyle = { display: 'flex', flexDirection: 'column' as const, gap: '0.25rem' }
-const inputStyle = { padding: '0.4rem 0.5rem', border: '1px solid var(--border)', borderRadius: '4px', background: 'var(--bg)', color: 'var(--text)' }
+function personnelName(p: Pick<Personnel, 'Nom_Personnel' | 'Prenom_Personnel'>): string {
+  return [p.Nom_Personnel, p.Prenom_Personnel].filter(Boolean).join(' ')
+}
+
+// Un id 0 (défaut WinDev) équivaut à « aucun lien ».
+function linkId(value: string | null | undefined): string {
+  return value && value !== '0' ? value : ''
+}
 
 // Formulaire de saisie utilisé par la modale de création/modification (voir
 // ChauffeursPage.tsx). `initial` vaut null en création, sinon pré-remplit
-// les champs avec la ligne cliquée dans le tableau. IDPERSONNELS n'a pas de
-// sélecteur dédié (pas de feature Personnel) — saisi comme identifiant brut.
-export function ChauffeurForm({ initial, defaults, societes, onSubmit, onCancel }: Props) {
+// les champs avec la ligne cliquée dans le tableau. « Email planning » est
+// l'e-mail professionnel du salarié lié, en lecture seule (il se modifie
+// sur la fiche personnel).
+export function ChauffeurForm({ initial, defaults, societes, personnel, onSubmit, onCancel }: Props) {
   const [form, setForm] = useState<ChauffeurDto>({
     Nom_chauffeur: initial?.Nom_chauffeur ?? '',
     Telephone: initial?.Telephone ?? '',
     Categorie: initial?.Categorie ?? '',
     Archive: initial?.Archive ?? 0,
-    IDPERSONNELS: initial?.IDPERSONNELS ?? '',
-    IDSOCIETES: initial?.IDSOCIETES ?? '',
+    IDPERSONNELS: linkId(initial?.IDPERSONNELS),
+    IDSOCIETES: linkId(initial?.IDSOCIETES),
     ...(initial ? {} : defaults),
   })
   const [submitting, setSubmitting] = useState(false)
+  const categories = useEnumerationLabels('categorie_chauffeur')
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault()
+  const sortedPersonnel = useMemo(
+    () => [...personnel].sort((a, b) => personnelName(a).localeCompare(personnelName(b), 'fr')),
+    [personnel],
+  )
+  const sortedSocietes = useMemo(
+    () => [...societes].sort((a, b) => (a.Nom_societe ?? '').localeCompare(b.Nom_societe ?? '', 'fr')),
+    [societes],
+  )
+
+  // E-mail du salarié choisi ; tant que la liste n'est pas chargée, celui
+  // renvoyé avec le chauffeur (même salarié).
+  const linked = sortedPersonnel.find((p) => p.IDPERSONNELS === form.IDPERSONNELS)
+  const emailPlanning = form.IDPERSONNELS
+    ? (linked?.E_mail_professionnel ?? (form.IDPERSONNELS === linkId(initial?.IDPERSONNELS) ? initial?.Personnel?.E_mail_professionnel : null))
+    : null
+
+  async function save() {
     setSubmitting(true)
     try {
       await onSubmit(form)
@@ -58,49 +88,71 @@ export function ChauffeurForm({ initial, defaults, societes, onSubmit, onCancel 
     }
   }
 
+  // Quitter la fiche modifiée demande « Enregistrer / Annuler les
+  // modifications » (voir components/unsaved-changes/).
+  const { formRef, confirmLeave } = useUnsavedForm(form, save)
+
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault()
+    void save()
+  }
+
+  const set = <K extends keyof ChauffeurDto>(key: K, value: ChauffeurDto[K]) => setForm({ ...form, [key]: value })
+
   return (
-    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginBottom: '0.5rem' }}>
-        <button type="button" className="page-actions-button secondary" onClick={onCancel}>Annuler</button>
-        <button type="submit" className="page-actions-button primary" disabled={submitting}>{submitting ? 'Enregistrement...' : 'Enregistrer'}</button>
+    <form ref={formRef} onSubmit={handleSubmit} className="form fiche">
+      <div className="form-actions">
+        <button type="button" className="btn" onClick={() => void confirmLeave(onCancel)}>Annuler</button>
+        <button type="submit" className="btn primary" disabled={submitting}>{submitting ? 'Enregistrement...' : 'Enregistrer'}</button>
       </div>
-      <label style={fieldStyle}>
-        Chauffeur
-        <input style={inputStyle} value={form.Nom_chauffeur} onChange={(e) => setForm({ ...form, Nom_chauffeur: e.target.value })} />
-      </label>
-      <label style={fieldStyle}>
-        Catégorie
-        <input style={inputStyle} value={form.Categorie} onChange={(e) => setForm({ ...form, Categorie: e.target.value })} />
-      </label>
-      <label style={fieldStyle}>
-        Téléphone
-        <input style={inputStyle} value={form.Telephone} onChange={(e) => setForm({ ...form, Telephone: e.target.value })} />
-      </label>
-      <label style={fieldStyle}>
-        Société
-        <select style={inputStyle} value={form.IDSOCIETES} onChange={(e) => setForm({ ...form, IDSOCIETES: e.target.value })}>
-          <option value="">—</option>
-          {societes.map((s) => (
-            <option key={s.IDSOCIETES} value={s.IDSOCIETES}>{s.Nom_societe}</option>
-          ))}
-        </select>
-      </label>
-      <label style={fieldStyle}>
-        ID personnel (lien)
-        <input style={inputStyle} value={form.IDPERSONNELS} onChange={(e) => setForm({ ...form, IDPERSONNELS: e.target.value })} />
-      </label>
-      {initial?.Personnel && (
-        <p style={{ margin: 0, fontSize: '0.85em', color: 'var(--text-muted, gray)' }}>
-          Personnel actuel : {[initial.Personnel.Nom_Personnel, initial.Personnel.Prenom_Personnel].filter(Boolean).join(' ') || '—'}
-        </p>
-      )}
-      <label style={fieldStyle}>
-        Archivé
-        <select style={inputStyle} value={form.Archive} onChange={(e) => setForm({ ...form, Archive: Number(e.target.value) })}>
-          <option value={0}>Non</option>
-          <option value={1}>Oui</option>
-        </select>
-      </label>
+
+      <section className="fiche-section">
+        <div className="chf-grid">
+          <FicheField label="Entreprise">
+            <select value={form.IDSOCIETES} onChange={(e) => set('IDSOCIETES', e.target.value)}>
+              <option value="" />
+              {/* Société liée pas encore dans la liste chargée. */}
+              {form.IDSOCIETES && !sortedSocietes.some((s) => s.IDSOCIETES === form.IDSOCIETES) && (
+                <option value={form.IDSOCIETES}>{initial?.Societe?.Nom_societe ?? form.IDSOCIETES}</option>
+              )}
+              {sortedSocietes.map((s) => (
+                <option key={s.IDSOCIETES} value={s.IDSOCIETES}>{s.Nom_societe}</option>
+              ))}
+            </select>
+          </FicheField>
+          <FicheField label="Catégorie">
+            <select value={form.Categorie} onChange={(e) => set('Categorie', e.target.value)}>
+              <option value="" />
+              {form.Categorie && !(form.Categorie in categories) && <option value={form.Categorie}>{form.Categorie}</option>}
+              {Object.entries(categories).map(([valeur, libelle]) => (
+                <option key={valeur} value={valeur}>{libelle}</option>
+              ))}
+            </select>
+          </FicheField>
+          <FicheField label="Nom">
+            <input value={form.Nom_chauffeur} maxLength={50} onChange={(e) => set('Nom_chauffeur', e.target.value)} />
+          </FicheField>
+          <FicheField label="Téléphone">
+            <input type="tel" value={form.Telephone} maxLength={50} onChange={(e) => set('Telephone', e.target.value)} />
+          </FicheField>
+          <FicheField label="Lien salarié">
+            <select value={form.IDPERSONNELS} onChange={(e) => set('IDPERSONNELS', e.target.value)}>
+              <option value="" />
+              {form.IDPERSONNELS && !linked && (
+                <option value={form.IDPERSONNELS}>{initial?.Personnel ? personnelName(initial.Personnel) : form.IDPERSONNELS}</option>
+              )}
+              {sortedPersonnel.map((p) => (
+                <option key={p.IDPERSONNELS} value={p.IDPERSONNELS}>{personnelName(p) || p.IDPERSONNELS}</option>
+              ))}
+            </select>
+          </FicheField>
+          <div className="field">
+            <span className="field-label">Email planning</span>
+            <span className="fiche-readonly" title="E-mail professionnel du salarié lié">{emailPlanning || ' '}</span>
+          </div>
+        </div>
+        <FicheSwitch label="Archivé" checked={form.Archive === 1} onChange={(on) => set('Archive', on ? 1 : 0)} />
+      </section>
     </form>
   )
 }

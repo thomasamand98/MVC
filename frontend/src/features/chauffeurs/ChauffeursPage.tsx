@@ -5,7 +5,9 @@ import { CrudPage } from '../../components/CrudPage.js'
 import { ChauffeurForm, type ChauffeurDto } from './ChauffeurForm.js'
 import { useApiMutation } from '../../lib/useApiMutation.js'
 import { useSocietes } from '../societes/useSocietes.js'
+import { usePersonnel } from '../personnel/usePersonnel.js'
 import { projectionFilters, type ProjectionView } from '../../components/projection/relations.js'
+import { ArchiveFilter, type ArchiveFilterValue } from '../../components/ArchiveFilter.js'
 
 const DEFAULT_PAGE_SIZE = 25
 
@@ -16,12 +18,18 @@ export function ChauffeursPage({ projection }: { projection?: ProjectionView } =
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
   const [search, setSearch] = useState('')
-  const { chauffeurs, setChauffeurs, loading, error, refetch, total } = useChauffeurs({ page, pageSize, search, filters: projectionFilters(projection) })
+  // Non archivés par défaut ; tous en projection, pour ne masquer aucune
+  // ligne liée.
+  const [archive, setArchive] = useState<ArchiveFilterValue>(projection ? '' : '0')
+  const filters = { ...projectionFilters(projection), ...(archive ? { archive } : {}) }
+  const { chauffeurs, setChauffeurs, loading, error, refetch, total } = useChauffeurs({ page, pageSize, search, filters })
   const { create, update, remove } = useApiMutation<ChauffeurDto, Chauffeur>('chauffeurs')
-  // Chargée ici (une fois, tant que l'onglet Chauffeurs reste monté) et
-  // passée au formulaire pour le sélecteur Société — évite de la
-  // recharger à chaque ouverture de la modale (voir ChauffeurForm.tsx).
+  // Chargées ici (une fois, tant que l'onglet Chauffeurs reste monté) et
+  // passées au formulaire pour les sélecteurs Entreprise et Lien salarié —
+  // évite de les recharger à chaque ouverture de la modale (voir
+  // ChauffeurForm.tsx).
   const { societes } = useSocietes()
+  const { personnel } = usePersonnel()
 
   return (
     <CrudPage<Chauffeur, ChauffeurDto>
@@ -51,9 +59,10 @@ export function ChauffeursPage({ projection }: { projection?: ProjectionView } =
       editModalTitle="Modifier le chauffeur"
       entity="chauffeurs"
       heading={projection?.heading}
+      toolbarExtra={<ArchiveFilter value={archive} onChange={(value) => { setArchive(value); setPage(1) }} />}
       newRecordScope={projection ? `projection:${projection.source}:${projection.ids.join(',')}` : undefined}
       renderForm={({ initial, onSubmit, onCancel }) => (
-        <ChauffeurForm initial={initial} defaults={projection?.defaults} societes={societes} onSubmit={onSubmit} onCancel={onCancel} />
+        <ChauffeurForm initial={initial} defaults={projection?.defaults} societes={societes} personnel={personnel} onSubmit={onSubmit} onCancel={onCancel} />
       )}
     />
   )

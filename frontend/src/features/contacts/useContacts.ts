@@ -19,6 +19,9 @@ export type Contact = {
     Service_bureau: string | null
     Societe: { Nom_societe: string | null } | null
   }[]
+  // Seulement avec le filtre pointId (onglet Contacts de la fiche Point) :
+  // le lien du contact avec CE point.
+  PointContacts?: { Lien: string | null; Recevoir_Mail_Planning: number | null }[]
 }
 
 // Forme complète d'un contact telle que renvoyée par GET /contacts/:id
@@ -40,7 +43,15 @@ export type ContactDetail = {
   Adresse_entreprise: number | null
   description_telephone: string | null
   IDADRESSES: string | null
-  Adresse: { Adresse1: string | null; CP: string | null; Localite: string | null } | null
+  Adresse: {
+    Adresse1: string | null
+    Adresse2: string | null
+    Adresse3: string | null
+    CP: string | null
+    Localite: string | null
+    Pays: string | null
+    Pays_full_name: string | null
+  } | null
   // Du plus ancien au plus récent : le premier est la société principale
   // modifiable dans la fiche (voir ContactForm.tsx).
   SocieteContacts: {

@@ -8,6 +8,7 @@ import { buildSearchWhere } from '../common/search.js';
 import { andWhere, projectionWhere, type Projection, type ProjectionMap } from '../common/projection.js';
 import { serializeBigInt } from '../prisma/serialize-bigint.js';
 import { CreateVehiculeDto, UpdateVehiculeDto } from './vehicule.dto.js';
+import { blankToNull, toOptionalId } from '../common/blank-to-null.js';
 
 export const vehiculeSelect = {
   IDVEHICULES: true,
@@ -42,13 +43,8 @@ export const vehiculeDetailSelect = {
 // lignes de cette table liées aux ids sélectionnés.
 const vehiculeProjections: ProjectionMap<Prisma.VehiculeWhereInput> = {
   societes: (ids) => ({ IDSOCIETES: { in: ids } }),
-  // Un véhicule est lié à un attelage comme tracteur ou comme remorque.
-  attelages: (ids) => ({
-    OR: [
-      { AttelagesTracteur: { some: { IDATTELAGE: { in: ids } } } },
-      { AttelagesRemorque: { some: { IDATTELAGE: { in: ids } } } },
-    ],
-  }),
+  // Depuis « attelages » : voir attelageProjectionWhere (requête préalable,
+  // pas de relation Prisma vers attelages_reference).
 };
 
 @Injectable()
@@ -70,7 +66,8 @@ export class VehiculeService {
       { Num_chassis: c },
       { Num_licence_transport: c },
     ]);
-    const where = andWhere<Prisma.VehiculeWhereInput>(filterWhere, projectionWhere(vehiculeProjections, projection));
+    const projWhere = projection?.via === 'attelages' ? await this.attelageProjectionWhere(projection.ids) : projectionWhere(vehiculeProjections, projection);
+    const where = andWhere<Prisma.VehiculeWhereInput>(filterWhere, projWhere);
     const [vehicules, total] = await Promise.all([
       this.prisma.vehicule.findMany({
         where,
@@ -81,6 +78,18 @@ export class VehiculeService {
       this.prisma.vehicule.count({ where }),
     ]);
     return { vehicules: serializeBigInt(vehicules), total };
+  }
+
+  // Projection depuis des attelages de référence : leurs tracteurs et
+  // remorques. IDTRACTEUR/IDREMORQUE n'ont pas de relation Prisma, les ids
+  // sont donc lus d'abord.
+  private async attelageProjectionWhere(ids: bigint[]): Promise<Prisma.VehiculeWhereInput> {
+    const attelages = await this.prisma.attelageReference.findMany({
+      where: { IDATTELAGE_REFERENCE: { in: ids } },
+      select: { IDTRACTEUR: true, IDREMORQUE: true },
+    });
+    const vehiculeIds = attelages.flatMap((a) => [a.IDTRACTEUR, a.IDREMORQUE]).filter((id): id is bigint => id !== null && id > 0n);
+    return { IDVEHICULES: { in: vehiculeIds } };
   }
 
   async getVehicule(id: bigint) {
@@ -120,9 +129,10 @@ export class VehiculeService {
 // Le DTO a les mêmes noms de champs que Prisma — seul IDSOCIETES (BigInt
 // côté Prisma, string côté JSON) a besoin d'être converti, le reste passe
 // tel quel via le spread (les Date_* acceptent directement une string ISO).
+// IDSOCIETES '' retire la société (NULL : 0 violerait la clé étrangère).
 function toVehiculeData(dto: CreateVehiculeDto | UpdateVehiculeDto) {
   return {
-    ...dto,
-    IDSOCIETES: dto.IDSOCIETES ? BigInt(dto.IDSOCIETES) : undefined,
+    ...blankToNull(dto, ['Date_validite_assurance', 'Date_validite_licence', 'Date_modification_licence', 'Date_inspection_auto', 'Date_radiation_immatriculation', 'Date_vente', 'Date_premiere_mise_en_circulation', 'Date_validite_tachygeaphe']),
+    IDSOCIETES: toOptionalId(dto.IDSOCIETES),
   };
 }

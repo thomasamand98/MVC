@@ -16,6 +16,7 @@ export type Personnel = {
   Date_validite_selection_medicale: string | null
   Date_validite_carte_chauffeur: string | null
   Num_service_social: string | null
+  E_mail_professionnel: string | null
 }
 
 // Forme complète d'un personnel telle que renvoyée par GET /personnel/:id,
@@ -46,6 +47,17 @@ export type PersonnelDetail = Personnel & {
   Date_validite_carte_identite: string | null
   Date_validite_A1: string | null
   Date_validite_SIPSI: string | null
+  // Adresse liée par IDADRESSES (table `adresses`), ajoutée par
+  // getPersonnel côté backend.
+  Adresse: {
+    Adresse1: string | null
+    Adresse2: string | null
+    Adresse3: string | null
+    CP: string | null
+    Localite: string | null
+    Pays: string | null
+    Pays_full_name: string | null
+  } | null
 }
 
 // Récupère la liste des personnels depuis l'API au montage du composant qui

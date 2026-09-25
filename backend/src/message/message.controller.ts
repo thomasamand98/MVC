@@ -2,6 +2,7 @@
 // Reçoit les requêtes HTTP de la View et délègue au Model (MessageService).
 import { Controller, Get, Query } from '@nestjs/common';
 import { MessageService } from './message.service.js';
+import { ParseIdPipe } from '../common/params.js';
 
 @Controller()
 export class MessageController {
@@ -10,7 +11,7 @@ export class MessageController {
   // ?societeId=X (obligatoire) : liste des messages envoyés liés à cette
   // société — voir MessageService.getMessagesBySociete.
   @Get('messages')
-  async getMessages(@Query('societeId') societeId: string, @Query('search') search?: string) {
-    return this.messageService.getMessagesBySociete(BigInt(societeId), search);
+  async getMessages(@Query('societeId', ParseIdPipe) societeId: bigint, @Query('search') search?: string) {
+    return this.messageService.getMessagesBySociete(societeId, search);
   }
 }

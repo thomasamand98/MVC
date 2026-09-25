@@ -8,6 +8,7 @@ import { useApiList, type ApiListPagination } from '../../lib/useApiList.js'
 export type Contrat = {
   IDCONTRATS: string
   Num_contrat: string | null
+  Version_contrat: string | null
   Description_projet: string | null
   Date_debut: string | null
   Date_fin: string | null

@@ -2,9 +2,6 @@
    catégorie sélectionnée à droite. Sous 900px, les deux cartes s'empilent
    (la liste des catégories devient une zone à hauteur limitée, scrollable). */
 .enum-page {
-  --enum-accent: #03c1ec;
-  --enum-accent-bg: rgba(3, 193, 236, 0.12);
-  --enum-surface: var(--code-bg);
 }
 
 .enum-layout {
@@ -16,94 +13,15 @@
 
 .enum-card {
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: var(--bg);
   padding: 0.75rem;
   box-sizing: border-box;
   min-width: 0;
 }
 
-/* ---------- Boutons ---------- */
-
-.enum-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text-h);
-  padding: 0.45rem 0.85rem;
-  font: inherit;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s ease, opacity 0.15s ease;
-}
-
-.enum-button:hover:not(:disabled) {
-  background: var(--enum-surface);
-}
-
-.enum-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-.enum-button.primary {
-  background: var(--enum-accent);
-  border-color: transparent;
-  color: #fff;
-}
-
-.enum-button.primary:hover:not(:disabled) {
-  background: var(--enum-accent);
-  opacity: 0.88;
-}
-
-.enum-button.danger {
-  background: var(--danger-bg);
-  border-color: var(--danger-border);
-  color: var(--danger);
-}
-
-.enum-button.danger:hover:not(:disabled) {
-  background: var(--danger-border);
-}
-
-.enum-icon-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  border: none;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--text);
-  font-size: 1.05rem;
-  cursor: pointer;
-}
-
-.enum-icon-button:hover:not(:disabled) {
-  background: var(--enum-accent-bg);
-  color: var(--text-h);
-}
-
-.enum-icon-button.danger:hover:not(:disabled) {
-  background: var(--danger-bg);
-  color: var(--danger);
-}
-
-.enum-icon-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.3;
-}
-
-.enum-button:focus-visible,
-.enum-icon-button:focus-visible,
 .enum-category:focus-visible {
-  outline: 2px solid var(--enum-accent);
+  outline: var(--focus-outline);
   outline-offset: 2px;
 }
 
@@ -114,7 +32,7 @@
   align-items: center;
   gap: 0.5rem;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius);
   padding: 0 0.65rem;
   color: var(--text);
   background: var(--bg);
@@ -122,8 +40,8 @@
 }
 
 .enum-search:focus-within {
-  border-color: var(--enum-accent);
-  box-shadow: 0 0 0 3px var(--enum-accent-bg);
+  border-color: var(--brand);
+  box-shadow: var(--focus-ring);
 }
 
 .enum-search input {
@@ -157,7 +75,7 @@
   gap: 0.5rem;
   width: 100%;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--text);
   padding: 0.5rem 0.6rem;
@@ -168,12 +86,12 @@
 }
 
 .enum-category:hover {
-  background: var(--enum-surface);
+  background: var(--code-bg);
 }
 
 .enum-category[aria-current='true'] {
-  background: var(--enum-accent-bg);
-  border-left-color: var(--enum-accent);
+  background: var(--brand-bg);
+  border-left-color: var(--brand);
   color: var(--text-h);
 }
 
@@ -205,8 +123,8 @@
 .enum-count {
   min-width: 1.6rem;
   padding: 0.05rem 0.45rem;
-  border-radius: 999px;
-  background: var(--enum-surface);
+  border-radius: var(--radius-pill);
+  background: var(--code-bg);
   color: var(--text-h);
   font-size: 0.75rem;
   font-weight: 600;
@@ -215,8 +133,8 @@
 }
 
 .enum-category[aria-current='true'] .enum-count {
-  background: var(--enum-accent);
-  color: #fff;
+  background: var(--brand);
+  color: var(--on-brand);
 }
 
 .enum-lock {
@@ -269,8 +187,8 @@
   align-items: center;
   gap: 0.3rem;
   padding: 0.1rem 0.55rem;
-  border-radius: 999px;
-  background: var(--enum-surface);
+  border-radius: var(--radius-pill);
+  background: var(--code-bg);
   color: var(--text-h);
   font-size: 0.75rem;
   font-weight: 600;
@@ -306,7 +224,7 @@
 }
 
 .enum-table tbody tr:hover {
-  background: var(--enum-accent-bg);
+  background: var(--brand-bg);
 }
 
 .enum-table tbody tr:last-child td {
@@ -329,7 +247,7 @@
 }
 
 .enum-check input {
-  accent-color: var(--enum-accent);
+  accent-color: var(--brand);
   margin: 0;
 }
 
@@ -341,16 +259,6 @@
 
 /* Les actions de ligne restent discrètes tant que la ligne n'est ni
    survolée ni focalisée, sauf sur écran tactile où le survol n'existe pas. */
-@media (hover: hover) {
-  .enum-row-actions .enum-icon-button {
-    opacity: 0;
-  }
-
-  .enum-table tr:hover .enum-icon-button,
-  .enum-row-actions .enum-icon-button:focus-visible {
-    opacity: 1;
-  }
-}
 
 .enum-empty,
 .enum-empty-small {
@@ -388,38 +296,6 @@
   gap: 0.9rem;
 }
 
-.enum-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-h);
-}
-
-.enum-field input {
-  font: inherit;
-  font-size: 0.9rem;
-  font-weight: 400;
-  padding: 0.5rem 0.65rem;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--bg);
-  color: var(--text-h);
-}
-
-.enum-field input:focus {
-  outline: none;
-  border-color: #03c1ec;
-  box-shadow: 0 0 0 3px rgba(3, 193, 236, 0.12);
-}
-
-.enum-field input:disabled {
-  background: var(--code-bg);
-  color: var(--text);
-  cursor: not-allowed;
-}
-
 /* Case à cocher + libellé sur une ligne, l'aide passe dessous. */
 .enum-checkbox {
   display: grid;
@@ -433,29 +309,16 @@
 }
 
 .enum-checkbox input {
-  accent-color: #03c1ec;
+  accent-color: var(--brand);
   margin: 0;
 }
 
-.enum-checkbox .enum-field-hint {
+.enum-checkbox .field-hint {
   grid-column: 2;
 }
 
 .enum-field-narrow {
   max-width: 8rem;
-}
-
-.enum-field-hint {
-  font-size: 0.75rem;
-  font-weight: 400;
-  color: var(--text);
-}
-
-.enum-form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  margin-top: 0.25rem;
 }
 
 /* ---------- Responsive ---------- */
@@ -486,7 +349,7 @@
 
   .enum-table tr {
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: var(--radius);
     padding: 0.25rem 0;
     margin-bottom: 0.5rem;
   }

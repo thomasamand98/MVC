@@ -3,7 +3,9 @@
 // (CategorieEnumerationService).
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 import { CategorieEnumerationService } from './categorie-enumeration.service.js';
-import type { CreateCategorieEnumerationDto, UpdateCategorieEnumerationDto } from './categorie-enumeration.dto.js';
+import { CreateCategorieEnumerationDto, UpdateCategorieEnumerationDto } from './categorie-enumeration.dto.js';
+import { ParseIdPipe } from '../common/params.js';
+import { ZodBodyPipe } from '../common/validation.js';
 
 @Controller()
 export class CategorieEnumerationController {
@@ -15,17 +17,17 @@ export class CategorieEnumerationController {
   }
 
   @Post('categories-enumeration')
-  async createCategorieEnumeration(@Body() dto: CreateCategorieEnumerationDto) {
+  async createCategorieEnumeration(@Body(new ZodBodyPipe(CreateCategorieEnumerationDto)) dto: CreateCategorieEnumerationDto) {
     return this.categorieEnumerationService.createCategorieEnumeration(dto);
   }
 
   @Patch('categories-enumeration/:id')
-  async updateCategorieEnumeration(@Param('id') id: string, @Body() dto: UpdateCategorieEnumerationDto) {
-    return this.categorieEnumerationService.updateCategorieEnumeration(BigInt(id), dto);
+  async updateCategorieEnumeration(@Param('id', ParseIdPipe) id: bigint, @Body(new ZodBodyPipe(UpdateCategorieEnumerationDto)) dto: UpdateCategorieEnumerationDto) {
+    return this.categorieEnumerationService.updateCategorieEnumeration(id, dto);
   }
 
   @Delete('categories-enumeration/:id')
-  async deleteCategorieEnumeration(@Param('id') id: string) {
-    await this.categorieEnumerationService.deleteCategorieEnumeration(BigInt(id));
+  async deleteCategorieEnumeration(@Param('id', ParseIdPipe) id: bigint) {
+    await this.categorieEnumerationService.deleteCategorieEnumeration(id);
   }
 }

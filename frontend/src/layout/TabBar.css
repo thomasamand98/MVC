@@ -10,6 +10,7 @@
   align-items: center;
   gap: 0.3rem;
   overflow-x: auto;
+  
   background: var(--bg);
   border-bottom: 1px solid var(--border);
   padding: 0.5rem 0.5rem 0.5rem 0;
@@ -29,7 +30,7 @@
   flex-shrink: 0;
   max-width: 220px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--code-bg);
   padding: 0.3rem 0.35rem 0.3rem 0.7rem;
   cursor: grab;

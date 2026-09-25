@@ -30,7 +30,7 @@ export function ExecutionDetails({ execution: e, chauffeurNom, onClose }: Props)
           </div>
           <h3>{e.client}</h3>
         </div>
-        <button type="button" className="pl-icon-btn" onClick={onClose} aria-label="Fermer"><CloseIcon /></button>
+        <button type="button" className="icon-btn outlined" onClick={onClose} aria-label="Fermer"><CloseIcon /></button>
       </header>
 
       <dl className="pl-details-grid">

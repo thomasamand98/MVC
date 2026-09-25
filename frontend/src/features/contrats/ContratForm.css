@@ -1,6 +1,4 @@
 .contrat-form {
-  --contrat-accent: #03c1ec;
-  --contrat-accent-bg: rgba(3, 193, 236, 0.12);
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -14,24 +12,6 @@
   max-width: min(1100px, 100%);
 }
 
-/* ---------- Onglets (Détail / Prestations / Factures) ---------- */
-
-.contrat-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.6rem;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 0.6rem;
-}
-
-.contrat-tabs-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem;
-}
-
 /* ---------- Bouton « Voir le PDF » ---------- */
 
 .contrat-pdf {
@@ -41,64 +21,13 @@
 }
 
 .contrat-pdf-select {
-  padding: 0.45rem 0.6rem;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--bg);
-  color: var(--text-h);
-  font-family: inherit;
-  font-size: 0.85rem;
+  width: auto;
   max-width: 12rem;
 }
 
 .contrat-pdf-error {
   color: var(--danger);
   font-size: 0.8rem;
-}
-
-.contrat-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  border: 1px solid transparent;
-  border-radius: 7px;
-  background: none;
-  color: var(--text);
-  padding: 0.35rem 0.8rem;
-  font-family: inherit;
-  font-size: 0.85rem;
-  cursor: pointer;
-}
-
-.contrat-tab:hover:not(:disabled) {
-  background: var(--contrat-accent-bg);
-  color: var(--text-h);
-}
-
-.contrat-tab.active {
-  background: var(--contrat-accent);
-  color: #fff;
-}
-
-.contrat-tab:disabled {
-  cursor: not-allowed;
-  opacity: 0.4;
-}
-
-.contrat-tab-count {
-  min-width: 1.3rem;
-  padding: 0 0.4rem;
-  border-radius: 999px;
-  background: var(--code-bg);
-  color: var(--text-h);
-  font-size: 0.72rem;
-  font-weight: 600;
-  text-align: center;
-}
-
-.contrat-tab.active .contrat-tab-count {
-  background: rgba(255, 255, 255, 0.28);
-  color: #fff;
 }
 
 /* ---------- Détail : deux colonnes de cartes ---------- */
@@ -132,7 +61,7 @@
   flex-direction: column;
   gap: 0.75rem;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 0.9rem 1rem 1rem;
   min-width: 0;
 }
@@ -152,7 +81,7 @@
   gap: 0.6rem;
 }
 
-.contrat-row > .contrat-field {
+.contrat-row > .field {
   flex: 1 1 8rem;
 }
 
@@ -168,81 +97,9 @@
   flex: 0 1 8rem !important;
 }
 
-/* ---------- Champs ---------- */
-
-.contrat-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--text-h);
-  min-width: 0;
-}
-
-.contrat-field input,
-.contrat-field select,
-.contrat-field textarea {
-  padding: 0.45rem 0.6rem;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--bg);
-  color: var(--text-h);
-  font-family: inherit;
-  font-size: 0.9rem;
-  font-weight: 400;
-  min-width: 0;
-}
-
-.contrat-field textarea {
-  resize: vertical;
-}
-
-.contrat-field input:focus,
-.contrat-field select:focus,
-.contrat-field textarea:focus {
-  outline: none;
-  border-color: var(--contrat-accent);
-  box-shadow: 0 0 0 3px var(--contrat-accent-bg);
-}
-
-.contrat-field input:read-only,
-.contrat-field input:disabled {
-  background: var(--code-bg);
-  color: var(--text);
-  cursor: default;
-}
-
+/* Aligne la case à cocher sur le bas des champs voisins d'une ligne. */
 .contrat-checkbox {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-h);
-  cursor: pointer;
   padding-bottom: 0.3rem;
-}
-
-.contrat-checkbox input {
-  accent-color: var(--contrat-accent);
-  width: 1rem;
-  height: 1rem;
-  margin: 0;
-}
-
-.contrat-sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-}
-
-.contrat-muted {
-  margin: 0;
-  color: var(--text);
-  font-size: 0.85rem;
 }
 
 /* ---------- Conditions CMR ---------- */
@@ -273,7 +130,7 @@
   margin: 0;
   padding: 0;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius);
   max-height: 14rem;
   overflow-y: auto;
 }
@@ -324,70 +181,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ---------- Boutons ---------- */
-
-.contrat-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-}
-
-.contrat-button {
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--bg);
-  color: var(--text-h);
-  padding: 0.5rem 0.9rem;
-  font: inherit;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.contrat-button:hover {
-  background: var(--code-bg);
-}
-
-.contrat-icon-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.1rem;
-  height: 2.1rem;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--text);
-  font-size: 1.1rem;
-  cursor: pointer;
-}
-
-.contrat-icon-button.primary {
-  background: var(--contrat-accent);
-  color: #fff;
-}
-
-.contrat-icon-button.primary:hover:not(:disabled) {
-  opacity: 0.88;
-}
-
-.contrat-icon-button.danger:hover:not(:disabled) {
-  background: var(--danger-bg);
-  color: var(--danger);
-}
-
-.contrat-icon-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.4;
-}
-
-.contrat-tab:focus-visible,
-.contrat-button:focus-visible,
-.contrat-icon-button:focus-visible {
-  outline: 2px solid var(--contrat-accent);
-  outline-offset: 2px;
-}
-
 /* ---------- Onglets Prestations / Factures ---------- */
 
 .contrat-table-wrapper {
@@ -420,7 +213,7 @@
 }
 
 .contrat-table tbody tr:hover {
-  background: var(--contrat-accent-bg);
+  background: var(--brand-bg);
 }
 
 .contrat-table .contrat-num {
@@ -439,7 +232,7 @@
   display: inline-block;
   margin-left: 0.4rem;
   padding: 0.05rem 0.5rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--code-bg);
   color: var(--text-h);
   font-size: 0.72rem;
@@ -462,7 +255,7 @@
 
   .contrat-table tr {
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: var(--radius);
     padding: 0.25rem 0;
     margin-bottom: 0.5rem;
   }

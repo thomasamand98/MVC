@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { useEntite, type EntiteDetail, type EntiteDto } from './useEntite.js'
 import { EntiteForm } from './EntiteForm.js'
-import '../../components/PageActions.css'
+import { useUnsavedForm } from '../../components/unsaved-changes/UnsavedChangesContext.js'
 
 const FORM_ID = 'entite-form'
 
@@ -57,12 +57,18 @@ export function EntitePage() {
     if (data) setForm(toDto(data))
   }, [data])
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault()
+  // Fermer l'onglet avec des modifications demande « Enregistrer / Annuler
+  // les modifications » (voir components/unsaved-changes/).
+  const { formRef, markClean } = useUnsavedForm(form, save)
+
+  async function save() {
     if (!form) return
     setSubmitting(true)
     try {
       await update(form)
+      // La fiche reste affichée : ce qui vient d'être enregistré (et la
+      // version renvoyée par le serveur) devient la référence.
+      markClean()
     } catch (err) {
       alert(`Échec de l'enregistrement : ${err instanceof Error ? err.message : 'erreur inconnue'}`)
     } finally {
@@ -70,15 +76,20 @@ export function EntitePage() {
     }
   }
 
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault()
+    void save()
+  }
+
   if (loading) return <p>Chargement des coordonnées de l'entreprise...</p>
   if (error) return <p>Erreur : {error}</p>
   if (!form) return null
 
   return (
-    <div>
+    <div ref={formRef}>
       <div className="page-header">
         <h2>Coordonnée entreprise</h2>
-        <button type="submit" form={FORM_ID} className="page-actions-button primary" disabled={submitting}>
+        <button type="submit" form={FORM_ID} className="btn primary" disabled={submitting}>
           {submitting ? 'Enregistrement...' : 'Enregistrer'}
         </button>
       </div>

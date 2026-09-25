@@ -6,13 +6,20 @@ import { PointageForm, type PointageDto } from './PointageForm.js'
 import { useApiMutation } from '../../lib/useApiMutation.js'
 import { usePersonnel } from '../personnel/usePersonnel.js'
 import { projectionFilters, type ProjectionView } from '../../components/projection/relations.js'
+import { PointageSheet } from './PointageSheet.js'
+import { useTypesStatut } from './useTypesStatut.js'
 
 const DEFAULT_PAGE_SIZE = 25
 
-// `projection` : page ouverte en résultat d'une projection (voir
-// components/projection/ProjectionProvider.tsx) — filtrée sur les lignes
-// d'origine, avec son propre en-tête.
+// Onglet Pointage du menu : feuille de pointage d'un salarié (voir
+// PointageSheet.tsx). `projection` : page ouverte en résultat d'une
+// projection (voir components/projection/ProjectionProvider.tsx) — reste la
+// liste filtrée sur les lignes d'origine, avec son propre en-tête.
 export function PointagePage({ projection }: { projection?: ProjectionView } = {}) {
+  return projection ? <PointageList projection={projection} /> : <PointageSheet />
+}
+
+function PointageList({ projection }: { projection: ProjectionView }) {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
   const [search, setSearch] = useState('')
@@ -22,6 +29,7 @@ export function PointagePage({ projection }: { projection?: ProjectionView } = {
   // passée au formulaire pour le sélecteur Personnel — évite de la
   // recharger à chaque ouverture de la modale.
   const { personnel } = usePersonnel()
+  const { statuts } = useTypesStatut()
 
   return (
     <CrudPage<Pointage, PointageDto, PointageDetail>
@@ -54,7 +62,7 @@ export function PointagePage({ projection }: { projection?: ProjectionView } = {
       heading={projection?.heading}
       newRecordScope={projection ? `projection:${projection.source}:${projection.ids.join(',')}` : undefined}
       renderForm={({ initial, onSubmit, onCancel }) => (
-        <PointageForm initial={initial} defaults={projection?.defaults} personnel={personnel} onSubmit={onSubmit} onCancel={onCancel} />
+        <PointageForm initial={initial} defaults={projection?.defaults} personnel={personnel} statuts={statuts} onSubmit={onSubmit} onCancel={onCancel} />
       )}
     />
   )

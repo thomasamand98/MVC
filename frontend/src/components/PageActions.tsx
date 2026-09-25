@@ -1,7 +1,7 @@
 import type { SVGProps } from 'react'
 import './PageActions.css'
 
-function PlusIcon(props: SVGProps<SVGSVGElement>) {
+export function PlusIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden="true" {...props}>
       <path d="M12 5v14" />
@@ -10,7 +10,7 @@ function PlusIcon(props: SVGProps<SVGSVGElement>) {
   )
 }
 
-function TrashIcon(props: SVGProps<SVGSVGElement>) {
+export function TrashIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
       <path d="M4 7h16" />
@@ -22,7 +22,7 @@ function TrashIcon(props: SVGProps<SVGSVGElement>) {
   )
 }
 
-function PencilIcon(props: SVGProps<SVGSVGElement>) {
+export function PencilIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
       <path d="M4 20h4L19 9l-4-4L4 16z" />
@@ -48,13 +48,13 @@ type Props = {
 export function PageActions({ onCreate, onEdit, onDelete, selectedCount }: Props) {
   return (
     <div className="page-actions">
-      <button type="button" className="page-actions-button primary" onClick={onCreate}>
+      <button type="button" className="btn primary" onClick={onCreate}>
         <PlusIcon />
         Nouveau
       </button>
       <button
         type="button"
-        className="page-actions-button secondary"
+        className="btn"
         onClick={onEdit}
         disabled={selectedCount !== 1}
         title={selectedCount > 1 ? 'Sélectionnez une seule ligne pour la modifier' : undefined}
@@ -62,7 +62,7 @@ export function PageActions({ onCreate, onEdit, onDelete, selectedCount }: Props
         <PencilIcon />
         Modifier
       </button>
-      <button type="button" className="page-actions-button danger" onClick={onDelete} disabled={selectedCount === 0}>
+      <button type="button" className="btn danger" onClick={onDelete} disabled={selectedCount === 0}>
         <TrashIcon />
         Supprimer{selectedCount > 1 && ` (${selectedCount})`}
       </button>

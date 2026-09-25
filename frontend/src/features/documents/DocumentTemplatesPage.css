@@ -18,7 +18,7 @@
   min-width: 0;
   max-width: 22rem;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--bg);
   color: var(--text-h);
   padding: 0.45rem 0.6rem;
@@ -30,7 +30,7 @@
 .dtp-name-input:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-bg);
+  box-shadow: var(--focus-ring);
 }
 
 .dtp-empty {
@@ -41,7 +41,7 @@
   text-align: center;
   padding: 3rem 1.5rem;
   border: 1px dashed var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   color: var(--text);
 }
 
@@ -65,7 +65,7 @@
   flex-direction: column;
   gap: 0.6rem;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 1rem;
   cursor: pointer;
 }
@@ -80,7 +80,7 @@
   align-items: center;
   justify-content: center;
   height: 4.5rem;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--code-bg);
   color: var(--text);
   font-size: 1.8rem;
@@ -106,7 +106,7 @@
 .dtp-type-badge {
   display: inline-block;
   padding: 0.1rem 0.5rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--code-bg);
   color: var(--text);
   font-size: 0.7rem;
@@ -129,48 +129,9 @@
   margin-top: auto;
 }
 
-.dtp-button {
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--bg);
-  color: var(--text-h);
-  padding: 0.5rem 0.9rem;
-  font: inherit;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.dtp-button:hover {
-  background: var(--code-bg);
-}
-
-.dtp-icon-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.1rem;
-  height: 2.1rem;
-  flex-shrink: 0;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--text);
-  font-size: 1.1rem;
-  cursor: pointer;
-}
-
-.dtp-button + .dtp-icon-button {
+/* Les boutons icônes se calent à droite du bouton texte. */
+.dtp-card-actions .btn + .icon-btn {
   margin-left: auto;
-}
-
-.dtp-icon-button:hover {
-  background: var(--code-bg);
-}
-
-.dtp-icon-button.danger:hover {
-  background: var(--danger-bg);
-  color: var(--danger);
 }
 
 /* ---------- Modale de création ---------- */
@@ -181,31 +142,4 @@
   gap: 1rem;
   padding: 1rem;
   min-width: 18rem;
-}
-
-.dtp-create-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-h);
-}
-
-.dtp-create-field input,
-.dtp-create-field select {
-  padding: 0.5rem 0.6rem;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--bg);
-  color: var(--text-h);
-  font-family: inherit;
-  font-size: 0.9rem;
-  font-weight: 400;
-}
-
-.dtp-create-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
 }

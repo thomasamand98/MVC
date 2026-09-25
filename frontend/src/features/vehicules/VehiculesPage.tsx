@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useVehicules, type Vehicule, type VehiculeDetail } from './useVehicules.js'
-import { columns } from './colums.js'
+import { makeColumns } from './colums.js'
+import { useEnumerationLabels } from '../../lib/useEnumerationLabels.js'
 import { CrudPage } from '../../components/CrudPage.js'
 import { VehiculeForm, type VehiculeDto } from './VehiculeForm.js'
 import { useApiMutation } from '../../lib/useApiMutation.js'
@@ -22,6 +23,8 @@ export function VehiculesPage({ projection }: { projection?: ProjectionView } = 
   // passée au formulaire pour le sélecteur Société — évite de la
   // recharger à chaque ouverture de la modale (voir VehiculeForm.tsx).
   const { societes } = useSocietes()
+  const types = useEnumerationLabels('type_vehicule')
+  const columns = useMemo(() => makeColumns(types), [types])
 
   return (
     <CrudPage<Vehicule, VehiculeDto, VehiculeDetail>

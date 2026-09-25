@@ -1,6 +1,7 @@
 import { createColumnHelper } from '@tanstack/react-table'
 import { features } from '../../lib/tableFeatures.js'
 import type { Commande } from './useCommandes.js'
+import { formatNumContrat } from '../contrats/numero.js'
 
 // Formate une date ISO (renvoyée par Prisma) en JJ/MM/AAAA, plus lisible.
 function formatDate(value: string | null): string {
@@ -11,7 +12,11 @@ function formatDate(value: string | null): string {
 // Une colonne par champ affiché du modèle Commande (backend/prisma/schema.prisma).
 const helper = createColumnHelper<typeof features, Commande>()
 
-export const columns = helper.columns([
+// `unites` : libellés de l'énumération « unite_prestation » indexés par code
+// (voir useEnumerationLabels) — le code brut s'affiche tant qu'ils ne sont
+// pas chargés.
+export function makeColumns(unites: Record<string, string>) {
+  return helper.columns([
   helper.accessor('Date_commande', {
     header: 'Date',
     filterFn: 'includesString',
@@ -22,17 +27,17 @@ export const columns = helper.columns([
     header: 'Client',
     filterFn: 'includesString',
   }),
-  helper.accessor((row) => row.Contrat?.Num_contrat ?? '', {
+  helper.accessor((row) => (row.Contrat ? formatNumContrat(row.Contrat) : ''), {
     id: 'contrat',
     header: 'N° contrat',
     filterFn: 'includesString',
   }),
-  helper.accessor((row) => row.Prestation?.Marchandise?.Nom_marchandise ?? '', {
+  helper.accessor((row) => row.Marchandise?.Nom_marchandise ?? '', {
     id: 'marchandise',
     header: 'Marchandise',
     filterFn: 'includesString',
   }),
-  helper.accessor((row) => row.Prestation?.Unite ?? '', {
+  helper.accessor((row) => (row.Unite === null ? '' : (unites[String(row.Unite)] ?? String(row.Unite))), {
     id: 'unite',
     header: 'Unité',
     filterFn: 'includesString',
@@ -40,4 +45,5 @@ export const columns = helper.columns([
   helper.accessor('QT', { header: 'Quantité', filterFn: 'includesString' }),
   helper.accessor('NumRef', { header: 'Référence', filterFn: 'includesString' }),
   helper.accessor('Instruction', { header: 'Instruction', filterFn: 'includesString' }),
-])
+  ])
+}

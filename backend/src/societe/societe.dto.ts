@@ -1,18 +1,21 @@
+import { z } from 'zod';
+import { decimal, id, num, text } from '../common/validation.js';
+
 // Champs qu'un client peut envoyer pour créer/modifier une société —
 // le sous-ensemble scripturable de societeDetailSelect (societe.service.ts).
 // IDADRESSES est une string côté JSON (BigInt non sérialisable) — convertie
 // dans societe.service.ts. Prospect/Archive sont des codes 0/1 côté vrai
 // modèle Prisma (pas des booléens).
-export type CreateSocieteDto = {
-  Nom_societe?: string;
-  Denomination?: string;
-  TVA?: string;
-  Activite?: string;
-  Site_web?: string;
-  Note?: string;
-  IDADRESSES?: string;
-  Prospect?: number;
-  Archive?: number;
+export const CreateSocieteDto = z.object({
+  Nom_societe: text.optional(),
+  Denomination: text.optional(),
+  TVA: text.optional(),
+  Activite: text.optional(),
+  Site_web: text.optional(),
+  Note: text.optional(),
+  IDADRESSES: id.optional(),
+  Prospect: num,
+  Archive: num,
 
   // Données de facturation du Client lié, éditées directement depuis la
   // fiche Société (voir SocieteForm.tsx, sous-onglet « Client ») plutôt que
@@ -20,26 +23,28 @@ export type CreateSocieteDto = {
   // encore de Client lié et que `Client_Numero_client` est fourni,
   // societe.service.ts en crée un et le lie automatiquement ; sinon le
   // Client déjà lié est mis à jour avec ces champs.
-  Client_Numero_client?: string;
-  Client_Delai_paiement?: string;
-  Client_Taux_tva?: string;
-  Client_E_mail_comptabilite?: string;
-  Client_Facture_mail?: number;
-  Client_Adresse_facturation_societe?: number;
-  Client_IDADRESSES_facturation?: string;
-  Client_IDCONTACTS_Comptabilite?: string;
+  Client_Numero_client: text.optional(),
+  Client_Delai_paiement: text.optional(),
+  Client_Taux_tva: decimal.optional(),
+  Client_E_mail_comptabilite: text.optional(),
+  Client_Facture_mail: num,
+  Client_Adresse_facturation_societe: num,
+  Client_IDADRESSES_facturation: id.optional(),
+  Client_IDCONTACTS_Comptabilite: id.optional(),
 
   // Idem pour le Fournisseur lié (sous-onglet « Fournisseur »).
-  Fournisseur_Numero_fournisseur?: string;
-  Fournisseur_Delai_paiement?: string;
-  Fournisseur_Taux_tva?: string;
-  Fournisseur_E_mail_comptabilite?: string;
-  Fournisseur_Facture_mail?: number;
-  Fournisseur_Adresse_facturation_societe?: number;
-  Fournisseur_IDADRESSES_facturation?: string;
-  Fournisseur_IDCONTACTS_Comptabilite?: string;
-  Fournisseur_Iban?: string;
-  Fournisseur_Bic?: string;
-};
+  Fournisseur_Numero_fournisseur: text.optional(),
+  Fournisseur_Delai_paiement: text.optional(),
+  Fournisseur_Taux_tva: decimal.optional(),
+  Fournisseur_E_mail_comptabilite: text.optional(),
+  Fournisseur_Facture_mail: num,
+  Fournisseur_Adresse_facturation_societe: num,
+  Fournisseur_IDADRESSES_facturation: id.optional(),
+  Fournisseur_IDCONTACTS_Comptabilite: id.optional(),
+  Fournisseur_Iban: text.optional(),
+  Fournisseur_Bic: text.optional(),
+});
+export type CreateSocieteDto = z.infer<typeof CreateSocieteDto>;
 
-export type UpdateSocieteDto = Partial<CreateSocieteDto>;
+export const UpdateSocieteDto = CreateSocieteDto.partial();
+export type UpdateSocieteDto = z.infer<typeof UpdateSocieteDto>;

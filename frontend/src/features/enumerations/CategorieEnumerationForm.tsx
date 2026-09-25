@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import type { CategorieEnumeration, CategorieEnumerationDto } from './useEnumerations.js'
+import { useUnsavedForm } from '../../components/unsaved-changes/UnsavedChangesContext.js'
 
 type Props = {
   initial: CategorieEnumeration | null
@@ -19,8 +20,7 @@ export function CategorieEnumerationForm({ initial, onSubmit, onCancel }: Props)
   const [submitting, setSubmitting] = useState(false)
   const isSystem = Boolean(initial?.Enum_system)
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault()
+  async function save() {
     setSubmitting(true)
     try {
       await onSubmit({ Nom: form.Nom.trim(), Nom_affiche: form.Nom_affiche.trim() })
@@ -29,9 +29,18 @@ export function CategorieEnumerationForm({ initial, onSubmit, onCancel }: Props)
     }
   }
 
+  // Quitter la fiche modifiée demande « Enregistrer / Annuler les
+  // modifications » (voir components/unsaved-changes/).
+  const { formRef, confirmLeave } = useUnsavedForm(form, save)
+
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault()
+    void save()
+  }
+
   return (
-    <form onSubmit={handleSubmit} className="enum-form">
-      <label className="enum-field">
+    <form ref={formRef} onSubmit={handleSubmit} className="enum-form">
+      <label className="field">
         Libellé affiché
         <input
           value={form.Nom_affiche}
@@ -41,7 +50,7 @@ export function CategorieEnumerationForm({ initial, onSubmit, onCancel }: Props)
           autoFocus
         />
       </label>
-      <label className="enum-field">
+      <label className="field">
         Nom technique
         <input
           value={form.Nom}
@@ -51,13 +60,13 @@ export function CategorieEnumerationForm({ initial, onSubmit, onCancel }: Props)
           disabled={isSystem}
           placeholder="ex. type_vehicule"
         />
-        {isSystem && <span className="enum-field-hint">Catégorie système : le nom technique ne peut pas être modifié.</span>}
+        {isSystem && <span className="field-hint">Catégorie système : le nom technique ne peut pas être modifié.</span>}
       </label>
-      <div className="enum-form-actions">
-        <button type="button" className="enum-button" onClick={onCancel}>
+      <div className="form-actions">
+        <button type="button" className="btn" onClick={() => void confirmLeave(onCancel)}>
           Annuler
         </button>
-        <button type="submit" className="enum-button primary" disabled={submitting}>
+        <button type="submit" className="btn primary" disabled={submitting}>
           {submitting ? 'Enregistrement...' : 'Enregistrer'}
         </button>
       </div>

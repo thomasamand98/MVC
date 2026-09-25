@@ -1,4 +1,6 @@
+import { createElement } from 'react'
 import { createColumnHelper } from '@tanstack/react-table'
+import { ColorSwatch } from '../../components/ColorField.js'
 import { features } from '../../lib/tableFeatures.js'
 import type { Marchandise } from './useMarchandises.js'
 
@@ -47,5 +49,9 @@ export const columns = helper.columns([
     filterFn: 'includesString',
     cell: (info) => formatBool(info.getValue()),
   }),
-  helper.accessor('CouleurPlanning', { header: 'Couleur', filterFn: 'includesString' }),
+  helper.accessor('CouleurPlanning', {
+    header: 'Couleur',
+    enableColumnFilter: false,
+    cell: (info) => createElement(ColorSwatch, { value: info.getValue() }),
+  }),
 ])

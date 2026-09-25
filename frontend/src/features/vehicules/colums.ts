@@ -11,9 +11,17 @@ function formatDate(value: string | null): string {
 // Une colonne par champ affiché du modèle Vehicule (backend/prisma/schema.prisma).
 const helper = createColumnHelper<typeof features, Vehicule>()
 
-export const columns = helper.columns([
+// `types` : libellés de l'énumération « type_vehicule » indexés par code
+// (voir useEnumerationLabels) — le code brut s'affiche tant qu'ils ne sont
+// pas chargés.
+export function makeColumns(types: Record<string, string>) {
+  return helper.columns([
   helper.accessor('Num_immat', { header: "N° d'immatriculation", filterFn: 'includesString' }),
-  helper.accessor('Type', { header: 'Type', filterFn: 'includesString' }),
+  helper.accessor((row) => (row.Type === null ? '' : (types[String(row.Type)] ?? String(row.Type))), {
+    id: 'Type',
+    header: 'Type',
+    filterFn: 'includesString',
+  }),
   helper.accessor('Marque', { header: 'Marque', filterFn: 'includesString' }),
   helper.accessor('Modele', { header: 'Modèle', filterFn: 'includesString' }),
   helper.accessor((row) => row.Societe?.Nom_societe ?? '', {
@@ -44,4 +52,5 @@ export const columns = helper.columns([
     filterFn: 'includesString',
     cell: (info) => formatDate(info.getValue()),
   }),
-])
+  ])
+}

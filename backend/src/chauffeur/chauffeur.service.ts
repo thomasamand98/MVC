@@ -7,6 +7,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { buildSearchWhere } from '../common/search.js';
 import { andWhere, projectionWhere, type Projection, type ProjectionMap } from '../common/projection.js';
 import { serializeBigInt } from '../prisma/serialize-bigint.js';
+import { toOptionalId } from '../common/blank-to-null.js';
 import { CreateChauffeurDto, UpdateChauffeurDto } from './chauffeur.dto.js';
 
 // Pas de select séparé pour le détail : le modèle Chauffeur est petit et ce
@@ -22,7 +23,7 @@ export const chauffeurSelect = {
   IDSOCIETES: true,
   Societe: { select: { Nom_societe: true } },
   IDPERSONNELS: true,
-  Personnel: { select: { Nom_Personnel: true, Prenom_Personnel: true } },
+  Personnel: { select: { Nom_Personnel: true, Prenom_Personnel: true, E_mail_professionnel: true } },
 } satisfies Prisma.ChauffeurSelect;
 
 // Projection (voir common/projection.ts) : pour chaque table source, les
@@ -30,7 +31,7 @@ export const chauffeurSelect = {
 const chauffeurProjections: ProjectionMap<Prisma.ChauffeurWhereInput> = {
   societes: (ids) => ({ IDSOCIETES: { in: ids } }),
   personnel: (ids) => ({ IDPERSONNELS: { in: ids } }),
-  attelages: (ids) => ({ Attelages: { some: { IDATTELAGE: { in: ids } } } }),
+  attelages: (ids) => ({ AttelageReferences: { some: { IDATTELAGE_REFERENCE: { in: ids } } } }),
 };
 
 @Injectable()
@@ -41,7 +42,7 @@ export class ChauffeurService {
   // table). Fournis, la requête est découpée avec skip/take et `total`
   // (nombre total de lignes, pas juste celles de la page) est renvoyé à
   // côté pour que le frontend puisse calculer le nombre de pages.
-  async getChauffeurs(page?: number, pageSize?: number, search?: string, projection?: Projection) {
+  async getChauffeurs(page?: number, pageSize?: number, search?: string, projection?: Projection, archiveWhere?: Prisma.ChauffeurWhereInput) {
     const paginate = page !== undefined && pageSize !== undefined && pageSize > 0;
     const filterWhere = buildSearchWhere<Prisma.ChauffeurWhereInput>(search, (c) => [
       { Nom_chauffeur: c },
@@ -51,7 +52,7 @@ export class ChauffeurService {
       { Personnel: { Nom_Personnel: c } },
       { Personnel: { Prenom_Personnel: c } },
     ]);
-    const where = andWhere<Prisma.ChauffeurWhereInput>(filterWhere, projectionWhere(chauffeurProjections, projection));
+    const where = andWhere<Prisma.ChauffeurWhereInput>(filterWhere, projectionWhere(chauffeurProjections, projection), archiveWhere);
     const [chauffeurs, total] = await Promise.all([
       this.prisma.chauffeur.findMany({
         where,
@@ -100,11 +101,12 @@ export class ChauffeurService {
 
 // Le DTO a les mêmes noms de champs que Prisma — seuls les IDs (BigInt côté
 // Prisma, string côté JSON) ont besoin d'être convertis, le reste passe tel
-// quel via le spread.
+// quel via le spread. Un id '' retire le lien (NULL : 0 violerait la clé
+// étrangère).
 function toChauffeurData(dto: CreateChauffeurDto | UpdateChauffeurDto) {
   return {
     ...dto,
-    IDPERSONNELS: dto.IDPERSONNELS ? BigInt(dto.IDPERSONNELS) : undefined,
-    IDSOCIETES: dto.IDSOCIETES ? BigInt(dto.IDSOCIETES) : undefined,
+    IDPERSONNELS: toOptionalId(dto.IDPERSONNELS),
+    IDSOCIETES: toOptionalId(dto.IDSOCIETES),
   };
 }

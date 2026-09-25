@@ -14,7 +14,7 @@
   flex-direction: column;
   padding: 0.35rem;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--bg);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
@@ -27,7 +27,7 @@
 
 .projection-menu-item {
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: none;
   color: inherit;
   font: inherit;

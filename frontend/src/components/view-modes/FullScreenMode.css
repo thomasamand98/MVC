@@ -24,7 +24,7 @@
 .vm-fullscreen-back {
   background: none;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius);
   padding: 0.4rem 0.75rem;
   color: var(--text-h);
   cursor: pointer;

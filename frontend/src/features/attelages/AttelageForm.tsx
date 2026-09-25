@@ -1,20 +1,18 @@
-import { useState, type FormEvent } from 'react'
-import '../../components/PageActions.css'
-import type { Attelage } from './useAttelages.js'
+import { useMemo, useState, type FormEvent } from 'react'
+import type { Attelage, AttelageVehicule } from './useAttelages.js'
 import type { Chauffeur } from '../chauffeurs/useChauffeurs.js'
 import type { Vehicule } from '../vehicules/useVehicules.js'
+import type { Societe } from '../societes/useSocietes.js'
+import { useUnsavedForm } from '../../components/unsaved-changes/UnsavedChangesContext.js'
 
-// Champs scripturables d'un attelage, mêmes clés que le CreateAttelageDto
-// côté backend (backend/src/attelage/attelage.dto.ts) : IDCHAUFFEUR/
-// IDTRACTEUR/IDREMORQUE/IDPERSONNELS en string (BigInt non sérialisable côté
-// JSON), Date_debut/Date_fin en ISO string.
+// Champs scripturables d'un attelage de référence, mêmes clés que le
+// CreateAttelageDto côté backend (backend/src/attelage/attelage.dto.ts) :
+// IDs en string (BigInt non sérialisable côté JSON), '' = aucun lien.
 export type AttelageDto = {
   IDCHAUFFEUR: string
   IDTRACTEUR: string
   IDREMORQUE: string
-  IDPERSONNELS: string
-  Date_debut: string
-  Date_fin: string
+  IDSOCIETES: string
 }
 
 type Props = {
@@ -23,42 +21,52 @@ type Props = {
   // voir components/projection/relations.ts) — ignorées en modification.
   defaults?: Partial<AttelageDto>
   // Listes chargées par AttelagesPage et passées en props pour les
-  // sélecteurs Chauffeur/Tracteur/Remorque — évite de les recharger à
-  // chaque ouverture de la modale.
+  // sélecteurs — évite de les recharger à chaque ouverture de la modale.
   chauffeurs: Chauffeur[]
   vehicules: Vehicule[]
+  societes: Societe[]
   onSubmit: (dto: AttelageDto) => Promise<void>
   onCancel: () => void
 }
 
-const fieldStyle = { display: 'flex', flexDirection: 'column' as const, gap: '0.25rem' }
-const inputStyle = { padding: '0.4rem 0.5rem', border: '1px solid var(--border)', borderRadius: '4px', background: 'var(--bg)', color: 'var(--text)' }
+// Codes de l'énumération « type_vehicule » proposés dans chaque sélecteur.
+const TYPE_TRACTEUR = 1
+const TYPE_REMORQUE = 2
 
-// Convertit une date ISO (renvoyée par l'API) en "AAAA-MM-JJ", format attendu
-// par <input type="date">.
-function toDateInput(value: string | null | undefined): string {
-  if (!value) return ''
-  return value.slice(0, 10)
+// Un id 0 (défaut WinDev) équivaut à « aucun lien ».
+function linkId(value: string | null | undefined): string {
+  return value && value !== '0' ? value : ''
+}
+
+function vehiculeLabel(v: AttelageVehicule): string {
+  return [v.Marque, v.Modele].filter(Boolean).join(' ') + (v.Num_immat ? ` (${v.Num_immat})` : '')
+}
+
+function byLabel<T>(label: (item: T) => string) {
+  return (a: T, b: T) => label(a).localeCompare(label(b), 'fr')
 }
 
 // Formulaire de saisie utilisé par la modale de création/modification (voir
 // AttelagesPage.tsx). `initial` vaut null en création, sinon pré-remplit les
-// champs avec la ligne cliquée dans le tableau. IDPERSONNELS n'a pas de
-// sélecteur dédié ici — saisi comme identifiant brut.
-export function AttelageForm({ initial, defaults, chauffeurs, vehicules, onSubmit, onCancel }: Props) {
+// champs avec la ligne cliquée dans le tableau. Tracteur et Remorque ne
+// proposent que les véhicules de ce type ; le véhicule déjà lié reste
+// affiché même s'il est d'un autre type.
+export function AttelageForm({ initial, defaults, chauffeurs, vehicules, societes, onSubmit, onCancel }: Props) {
   const [form, setForm] = useState<AttelageDto>({
-    IDCHAUFFEUR: initial?.IDCHAUFFEUR ?? '',
-    IDTRACTEUR: initial?.IDTRACTEUR ?? '',
-    IDREMORQUE: initial?.IDREMORQUE ?? '',
-    IDPERSONNELS: initial?.IDPERSONNELS ?? '',
-    Date_debut: toDateInput(initial?.Date_debut),
-    Date_fin: toDateInput(initial?.Date_fin),
+    IDCHAUFFEUR: linkId(initial?.IDCHAUFFEUR),
+    IDTRACTEUR: linkId(initial?.IDTRACTEUR),
+    IDREMORQUE: linkId(initial?.IDREMORQUE),
+    IDSOCIETES: linkId(initial?.IDSOCIETES),
     ...(initial ? {} : defaults),
   })
   const [submitting, setSubmitting] = useState(false)
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault()
+  const sortedChauffeurs = useMemo(() => [...chauffeurs].sort(byLabel((c) => c.Nom_chauffeur ?? '')), [chauffeurs])
+  const sortedSocietes = useMemo(() => [...societes].sort(byLabel((s) => s.Nom_societe ?? '')), [societes])
+  const tracteurs = useMemo(() => vehicules.filter((v) => v.Type === TYPE_TRACTEUR).sort(byLabel(vehiculeLabel)), [vehicules])
+  const remorques = useMemo(() => vehicules.filter((v) => v.Type === TYPE_REMORQUE).sort(byLabel(vehiculeLabel)), [vehicules])
+
+  async function save() {
     setSubmitting(true)
     try {
       await onSubmit(form)
@@ -67,50 +75,70 @@ export function AttelageForm({ initial, defaults, chauffeurs, vehicules, onSubmi
     }
   }
 
+  // Quitter la fiche modifiée demande « Enregistrer / Annuler les
+  // modifications » (voir components/unsaved-changes/).
+  const { formRef, confirmLeave } = useUnsavedForm(form, save)
+
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault()
+    void save()
+  }
+
+  const set = (key: keyof AttelageDto, value: string) => setForm({ ...form, [key]: value })
+
+  // Option pour la valeur liée absente de la liste proposée (autre type de
+  // véhicule, chauffeur archivé, liste pas encore chargée...).
+  function currentOption(value: string, listed: boolean, label: string | null | undefined) {
+    return value && !listed ? <option value={value}>{label || value}</option> : null
+  }
+
+  function vehiculeSelect(key: 'IDTRACTEUR' | 'IDREMORQUE', options: Vehicule[], linked: AttelageVehicule | null | undefined) {
+    const value = form[key]
+    const other = vehicules.find((v) => v.IDVEHICULES === value)
+    return (
+      <select value={value} onChange={(e) => set(key, e.target.value)}>
+        <option value="" />
+        {currentOption(value, options.some((v) => v.IDVEHICULES === value), other ? vehiculeLabel(other) : linked ? vehiculeLabel(linked) : null)}
+        {options.map((v) => (
+          <option key={v.IDVEHICULES} value={v.IDVEHICULES}>{vehiculeLabel(v)}</option>
+        ))}
+      </select>
+    )
+  }
+
   return (
-    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginBottom: '0.5rem' }}>
-        <button type="button" className="page-actions-button secondary" onClick={onCancel}>Annuler</button>
-        <button type="submit" className="page-actions-button primary" disabled={submitting}>{submitting ? 'Enregistrement...' : 'Enregistrer'}</button>
+    <form ref={formRef} onSubmit={handleSubmit} className="form fiche">
+      <div className="form-actions">
+        <button type="button" className="btn" onClick={() => void confirmLeave(onCancel)}>Annuler</button>
+        <button type="submit" className="btn primary" disabled={submitting}>{submitting ? 'Enregistrement...' : 'Enregistrer'}</button>
       </div>
-      <label style={fieldStyle}>
-        Chauffeur
-        <select style={inputStyle} value={form.IDCHAUFFEUR} onChange={(e) => setForm({ ...form, IDCHAUFFEUR: e.target.value })}>
-          <option value="">—</option>
-          {chauffeurs.map((c) => (
+      <label className="field">
+        <span className="field-label">Chauffeur</span>
+        <select value={form.IDCHAUFFEUR} onChange={(e) => set('IDCHAUFFEUR', e.target.value)}>
+          <option value="" />
+          {currentOption(form.IDCHAUFFEUR, sortedChauffeurs.some((c) => c.IDCHAUFFEURS === form.IDCHAUFFEUR), initial?.Chauffeur?.Nom_chauffeur)}
+          {sortedChauffeurs.map((c) => (
             <option key={c.IDCHAUFFEURS} value={c.IDCHAUFFEURS}>{c.Nom_chauffeur}</option>
           ))}
         </select>
       </label>
-      <label style={fieldStyle}>
-        Tracteur
-        <select style={inputStyle} value={form.IDTRACTEUR} onChange={(e) => setForm({ ...form, IDTRACTEUR: e.target.value })}>
-          <option value="">—</option>
-          {vehicules.map((v) => (
-            <option key={v.IDVEHICULES} value={v.IDVEHICULES}>{[v.Marque, v.Modele, v.Num_immat].filter(Boolean).join(' ')}</option>
+      <label className="field">
+        <span className="field-label">Tracteur</span>
+        {vehiculeSelect('IDTRACTEUR', tracteurs, initial?.Tracteur)}
+      </label>
+      <label className="field">
+        <span className="field-label">Remorque</span>
+        {vehiculeSelect('IDREMORQUE', remorques, initial?.Remorque)}
+      </label>
+      <label className="field">
+        <span className="field-label">Société</span>
+        <select value={form.IDSOCIETES} onChange={(e) => set('IDSOCIETES', e.target.value)}>
+          <option value="" />
+          {currentOption(form.IDSOCIETES, sortedSocietes.some((s) => s.IDSOCIETES === form.IDSOCIETES), initial?.Societe?.Nom_societe)}
+          {sortedSocietes.map((s) => (
+            <option key={s.IDSOCIETES} value={s.IDSOCIETES}>{s.Nom_societe}</option>
           ))}
         </select>
-      </label>
-      <label style={fieldStyle}>
-        Remorque
-        <select style={inputStyle} value={form.IDREMORQUE} onChange={(e) => setForm({ ...form, IDREMORQUE: e.target.value })}>
-          <option value="">—</option>
-          {vehicules.map((v) => (
-            <option key={v.IDVEHICULES} value={v.IDVEHICULES}>{[v.Marque, v.Modele, v.Num_immat].filter(Boolean).join(' ')}</option>
-          ))}
-        </select>
-      </label>
-      <label style={fieldStyle}>
-        ID personnel
-        <input style={inputStyle} value={form.IDPERSONNELS} onChange={(e) => setForm({ ...form, IDPERSONNELS: e.target.value })} />
-      </label>
-      <label style={fieldStyle}>
-        Début
-        <input type="date" style={inputStyle} value={form.Date_debut} onChange={(e) => setForm({ ...form, Date_debut: e.target.value })} />
-      </label>
-      <label style={fieldStyle}>
-        Fin
-        <input type="date" style={inputStyle} value={form.Date_fin} onChange={(e) => setForm({ ...form, Date_fin: e.target.value })} />
       </label>
     </form>
   )

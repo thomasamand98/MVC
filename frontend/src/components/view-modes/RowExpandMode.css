@@ -16,7 +16,7 @@
 .vm-rowexpand-panel-inner {
   overflow: hidden;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   min-height: 0;
 }
 

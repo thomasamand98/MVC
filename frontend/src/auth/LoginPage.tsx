@@ -32,11 +32,11 @@ export function LoginPage({ onLogin }: Props) {
         <h1 className="login-title">Connexion</h1>
         <p className="login-subtitle">Identifiez-vous pour accéder à l’application.</p>
 
-        <label className="login-field">
+        <label className="field login-field">
           Identifiant
           <input value={login} onChange={(e) => setLogin(e.target.value)} autoComplete="username" autoFocus required />
         </label>
-        <label className="login-field">
+        <label className="field login-field">
           Mot de passe
           <input
             type="password"
@@ -48,12 +48,12 @@ export function LoginPage({ onLogin }: Props) {
         </label>
 
         {error && (
-          <p className="login-error" role="alert">
+          <p className="alert-error" role="alert">
             {error}
           </p>
         )}
 
-        <button type="submit" className="login-button" disabled={submitting}>
+        <button type="submit" className="btn primary login-button" disabled={submitting}>
           {submitting ? 'Connexion...' : 'Se connecter'}
         </button>
       </form>

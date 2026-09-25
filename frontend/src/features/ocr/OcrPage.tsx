@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from 'react'
 import { MAX_OCR_FILE_SIZE, isOcrSupported, runOcr } from './useOcr.js'
 import { OCR_PRESETS } from './ocrPresets.js'
-import '../../components/PageActions.css'
 import './OcrPage.css'
 
 type OcrResult = { text: string; annotation: unknown; durationMs: number }
@@ -126,7 +125,7 @@ export function OcrPage() {
     <div>
       <div className="page-header">
         <h2>Test OCR (Mistral)</h2>
-        <button type="button" className="page-actions-button primary" disabled={!file || running} onClick={handleRun}>
+        <button type="button" className="btn primary" disabled={!file || running} onClick={handleRun}>
           {running ? 'Extraction en cours...' : "Lancer l'OCR"}
         </button>
       </div>
@@ -153,7 +152,7 @@ export function OcrPage() {
 
       <details className="ocr-settings" open>
         <summary>Extraction structurée</summary>
-        <label className="ocr-field">
+        <label className="field ocr-field">
           <span>Préréglage</span>
           <select value={presetId} onChange={(e) => handlePresetChange(e.target.value)}>
             {OCR_PRESETS.map((preset) => (
@@ -164,11 +163,11 @@ export function OcrPage() {
           </select>
         </label>
         <div className="ocr-settings-grid">
-          <label className="ocr-field">
+          <label className="field ocr-field">
             <span>Prompt (consigne pour l'extraction)</span>
             <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={14} spellCheck={false} />
           </label>
-          <label className="ocr-field">
+          <label className="field ocr-field">
             <span>Schéma JSON de sortie (vide = OCR seul)</span>
             <textarea value={schema} onChange={(e) => setSchema(e.target.value)} rows={14} spellCheck={false} className="ocr-code" />
           </label>
@@ -197,7 +196,7 @@ export function OcrPage() {
                   <>
                     <div className="ocr-panel-header">
                       <h3>Extraction structurée (JSON)</h3>
-                      <button type="button" className="page-actions-button" onClick={() => handleCopy('json')}>
+                      <button type="button" className="btn" onClick={() => handleCopy('json')}>
                         {copied === 'json' ? 'Copié' : 'Copier'}
                       </button>
                     </div>
@@ -206,7 +205,7 @@ export function OcrPage() {
                 )}
                 <div className="ocr-panel-header">
                   <h3>Texte extrait (Markdown)</h3>
-                  <button type="button" className="page-actions-button" onClick={() => handleCopy('text')}>
+                  <button type="button" className="btn" onClick={() => handleCopy('text')}>
                     {copied === 'text' ? 'Copié' : 'Copier'}
                   </button>
                 </div>

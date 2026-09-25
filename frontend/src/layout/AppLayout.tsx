@@ -3,6 +3,9 @@ import { Sidebar, type MenuNode } from './Sidebar.js'
 import { TabBar } from './TabBar.js'
 import { TabsContext, type OpenTabRequest } from './TabsContext.js'
 import { ProjectionProvider } from '../components/projection/ProjectionProvider.js'
+import { GuardBoundary } from '../components/unsaved-changes/UnsavedChangesProvider.js'
+import { useConfirmLeave, useGuardScope } from '../components/unsaved-changes/UnsavedChangesContext.js'
+import type { GuardScope } from '../components/unsaved-changes/scope.js'
 import './AppLayout.css'
 import {
   DashboardIcon,
@@ -135,6 +138,20 @@ function getInitialActiveId(openTabIds: string[]): string {
   return openTabIds[0]
 }
 
+// Zone de saisie d'un onglet (voir components/unsaved-changes/) : fermer
+// l'onglet vérifie d'abord les fiches modifiées qu'il contient, y compris
+// celles ouvertes dans une page tableau.
+function TabBoundary({ id, scopes, children }: { id: string; scopes: Map<string, GuardScope>; children: ReactNode }) {
+  const scope = useGuardScope()
+  useEffect(() => {
+    scopes.set(id, scope)
+    return () => {
+      if (scopes.get(id) === scope) scopes.delete(id)
+    }
+  }, [id, scope, scopes])
+  return <GuardBoundary scope={scope}>{children}</GuardBoundary>
+}
+
 export function AppLayout() {
   // Onglets ouverts façon navigateur (voir TabBar.tsx) : cliquer sur une
   // entrée du menu déjà ouverte l'active simplement, sinon un nouvel
@@ -159,6 +176,8 @@ export function AppLayout() {
   // été ouvert au lieu de l'onglet réellement actif au moment du clic.
   const activeIdRef = useRef(activeId)
   activeIdRef.current = activeId
+  const [tabScopes] = useState(() => new Map<string, GuardScope>())
+  const confirmLeave = useConfirmLeave()
 
   // Bloque le scroll de la page pendant que le tiroir mobile est ouvert.
   useEffect(() => {
@@ -189,8 +208,12 @@ export function AppLayout() {
   // actif, rien d'autre à faire. Sinon, bascule sur son voisin (précédent,
   // sinon suivant) ou, s'il ne reste plus rien, rouvre le Tableau de bord.
   // Sert aussi de `closeTab` du TabsContext (voir plus bas) — un onglet
-  // dynamique retire en plus son contenu de `dynamicTabs`.
-  function handleCloseTab(itemId: string) {
+  // dynamique retire en plus son contenu de `dynamicTabs`. Une saisie
+  // modifiée dans l'onglet déclenche d'abord « Enregistrer / Annuler les
+  // modifications », sauf avec `force`.
+  async function handleCloseTab(itemId: string, options?: { force?: boolean }) {
+    const scope = tabScopes.get(itemId)
+    if (!options?.force && scope && !(await confirmLeave(scope))) return
     setOpenTabIds((prev) => {
       const index = prev.indexOf(itemId)
       const remaining = prev.filter((id) => id !== itemId)
@@ -235,7 +258,7 @@ export function AppLayout() {
   const openTabs = openTabIds.map((id) => ({ id, label: getTabLabel(id) }))
 
   return (
-    <TabsContext.Provider value={{ openOrActivateTab, closeTab: handleCloseTab }}>
+    <TabsContext.Provider value={{ openOrActivateTab, closeTab: (id, options) => void handleCloseTab(id, options) }}>
       <ProjectionProvider>
         <div className="app-layout">
           <button
@@ -255,11 +278,13 @@ export function AppLayout() {
             onClose={() => setMobileOpen(false)}
           />
           <div className="app-content">
-            <TabBar tabs={openTabs} activeId={activeId} onSelect={setActiveId} onClose={handleCloseTab} onReorder={handleReorderTabs} />
+            <TabBar tabs={openTabs} activeId={activeId} onSelect={setActiveId} onClose={(id) => void handleCloseTab(id)} onReorder={handleReorderTabs} />
             <div className="app-content-page">
               {openTabIds.map((id) => (
                 <div key={id} hidden={id !== activeId}>
-                  {getTabContent(id)}
+                  <TabBoundary id={id} scopes={tabScopes}>
+                    {getTabContent(id)}
+                  </TabBoundary>
                 </div>
               ))}
             </div>

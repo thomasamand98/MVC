@@ -1,6 +1,4 @@
 .dte {
-  --dte-accent: #03c1ec;
-  --dte-accent-bg: rgba(3, 193, 236, 0.12);
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -15,7 +13,7 @@
   align-items: center;
   gap: 0.5rem;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 0.4rem;
   background: var(--code-bg);
 }
@@ -24,7 +22,7 @@
   display: inline-flex;
   gap: 0.15rem;
   padding: 0.15rem;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--bg);
   border: 1px solid var(--border);
 }
@@ -54,8 +52,8 @@
 }
 
 .dte-toolbar button[aria-pressed='true'] {
-  background: var(--dte-accent);
-  color: #fff;
+  background: var(--brand);
+  color: var(--on-brand);
 }
 
 .dte-toolbar button {
@@ -65,7 +63,7 @@
   width: 2rem;
   height: 2rem;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-h);
   font-size: 1rem;
@@ -73,13 +71,13 @@
 }
 
 .dte-toolbar button:hover {
-  background: var(--dte-accent-bg);
-  color: var(--dte-accent);
+  background: var(--brand-bg);
+  color: var(--brand);
 }
 
 .dte-toolbar-select {
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--bg);
   color: var(--text-h);
   padding: 0.4rem 0.5rem;
@@ -126,7 +124,7 @@
   gap: 0.5rem;
   min-width: 0;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 0.6rem;
   position: sticky;
   top: 0.75rem;
@@ -146,7 +144,7 @@
   align-items: center;
   gap: 0.4rem;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius);
   padding: 0.4rem 0.6rem;
   color: var(--text);
   position: sticky;
@@ -174,7 +172,7 @@
 
 .dte-palette-group {
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius);
   padding: 0.3rem 0.5rem;
 }
 
@@ -199,7 +197,7 @@
 }
 
 .dte-palette-group[open] > .dte-palette-group-summary {
-  color: var(--dte-accent);
+  color: var(--brand);
 }
 
 .dte-palette-hint {
@@ -219,7 +217,7 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 0.3rem 0.4rem;
   cursor: grab;
   color: var(--text-h);
@@ -227,7 +225,7 @@
 }
 
 .dte-palette-field:hover {
-  background: var(--dte-accent-bg);
+  background: var(--brand-bg);
 }
 
 .dte-palette-field:active {
@@ -258,22 +256,22 @@
   height: 1.5rem;
   flex-shrink: 0;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--bg);
   color: var(--text);
   cursor: pointer;
 }
 
 .dte-palette-insert:hover {
-  background: var(--dte-accent);
-  color: #fff;
+  background: var(--brand);
+  color: var(--on-brand);
 }
 
 /* ---------- Canvas (page A4) ---------- */
 
 .dte-canvas-scroll {
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: var(--code-bg);
   padding: 1.5rem;
   display: flex;
@@ -301,14 +299,14 @@
 .dte-zone-header,
 .dte-zone-footer {
   border: 1px dashed var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius);
   padding: 0.5rem 0.7rem 0.7rem;
 }
 
 .dte-zone-header.active,
 .dte-zone-footer.active,
 .dte-zone-content.active .dte-zone-canvas-content {
-  border-color: var(--dte-accent);
+  border-color: var(--brand);
 }
 
 .dte-zone-content {
@@ -321,7 +319,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--dte-accent);
+  color: var(--brand);
 }
 
 .dte-zone-label span {
@@ -361,7 +359,7 @@
   font-size: 0.8rem;
   line-height: 1.5;
   padding: 0.6rem 0.7rem;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   box-sizing: border-box;
 }
 
@@ -370,7 +368,7 @@
 }
 
 .dte-zone-code:focus {
-  outline: 2px solid var(--dte-accent);
+  outline: var(--focus-outline);
   outline-offset: -2px;
 }
 
@@ -418,10 +416,10 @@
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  border: 1px solid var(--dte-accent);
-  border-radius: 999px;
-  background: var(--dte-accent-bg);
-  color: var(--dte-accent);
+  border: 1px solid var(--brand);
+  border-radius: var(--radius-pill);
+  background: var(--brand-bg);
+  color: var(--brand);
   padding: 0.05rem 0.15rem 0.05rem 0.55rem;
   font-size: 0.82em;
   font-weight: 600;
@@ -447,7 +445,7 @@
   width: 1.1rem;
   height: 1.1rem;
   border: none;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: transparent;
   color: inherit;
   font-size: 0.85rem;
@@ -456,8 +454,8 @@
 }
 
 .dte-chip-remove:hover {
-  background: var(--dte-accent);
-  color: #fff;
+  background: var(--brand);
+  color: var(--on-brand);
 }
 
 /* Vignette d'un champ image (ex. Entite.Logo) : rectangle façon logo plutôt
@@ -471,7 +469,7 @@
   gap: 0.15rem;
   width: 6.5rem;
   height: 3.2rem;
-  border-radius: 8px;
+  border-radius: var(--radius);
   border-style: dashed;
   padding: 0.3rem;
   vertical-align: middle;
@@ -501,8 +499,8 @@
 
 .dte-repeat {
   margin: 0.5rem 0;
-  border: 1px dashed var(--dte-accent);
-  border-radius: 10px;
+  border: 1px dashed var(--brand);
+  border-radius: var(--radius-md);
   padding: 1.6rem 0.6rem 0.6rem;
   position: relative;
 }
@@ -519,9 +517,9 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  background: var(--dte-accent);
-  color: #fff;
-  border-radius: 999px;
+  background: var(--brand);
+  color: var(--on-brand);
+  border-radius: var(--radius-pill);
   padding: 0.15rem 0.4rem 0.15rem 0.7rem;
   font-size: 0.7rem;
   font-weight: 700;
@@ -531,8 +529,8 @@
 .dte-repeat-remove {
   border: none;
   background: rgba(255, 255, 255, 0.25);
-  color: #fff;
-  border-radius: 999px;
+  color: var(--on-brand);
+  border-radius: var(--radius-pill);
   padding: 0.1rem 0.5rem;
   font-size: 0.68rem;
   font-weight: 700;
@@ -544,7 +542,7 @@
 }
 
 .dte-repeat-row {
-  background: var(--dte-accent-bg);
+  background: var(--brand-bg);
 }
 
 /* ---------- Tableaux ---------- */
@@ -591,7 +589,7 @@
   width: auto;
   min-width: 55%;
   margin: 0.1rem 0 0;
-  border-left: 2px solid var(--dte-accent);
+  border-left: 2px solid var(--brand);
 }
 
 .dte-table-nested th,
@@ -633,20 +631,4 @@
   margin-right: auto;
   font-size: 0.8rem;
   color: var(--text);
-}
-
-.dte-button {
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--bg);
-  color: var(--text-h);
-  padding: 0.5rem 0.9rem;
-  font: inherit;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.dte-button:hover {
-  background: var(--code-bg);
 }

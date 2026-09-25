@@ -141,7 +141,7 @@ export function DataTable<T extends RowData>({ data, columns, getRowId, selected
     <div className="data-table">
       <div className="data-table-toolbar">
         {toolbarStart}
-        <button type="button" className="data-table-export-button" onClick={handleExportExcel}>
+        <button type="button" className="btn sm data-table-export-button" onClick={handleExportExcel}>
           <ExcelIcon />
           Exporter
         </button>

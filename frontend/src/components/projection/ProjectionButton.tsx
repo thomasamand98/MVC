@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import { ENTITIES, type EntityKey, type Relation } from './relations.js'
-import '../PageActions.css'
 import './ProjectionButton.css'
 
 function ProjectionIcon() {
@@ -51,7 +50,7 @@ export function ProjectionButton({ relations, selectedCount, onSelect }: Props) 
     <div className="projection" ref={rootRef}>
       <button
         type="button"
-        className="page-actions-button secondary"
+        className="btn"
         onClick={() => setOpen((prev) => !prev)}
         disabled={disabled}
         aria-haspopup="menu"

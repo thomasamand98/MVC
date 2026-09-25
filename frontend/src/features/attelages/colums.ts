@@ -1,14 +1,15 @@
 import { createColumnHelper } from '@tanstack/react-table'
 import { features } from '../../lib/tableFeatures.js'
-import type { Attelage } from './useAttelages.js'
+import type { Attelage, AttelageVehicule } from './useAttelages.js'
 
 // Un véhicule lié affiché comme "Marque Modèle (immat)".
-function formatVehicule(v: { Marque: string | null; Modele: string | null; Num_immat: string | null } | null): string {
+function formatVehicule(v: AttelageVehicule | null): string {
   if (!v) return ''
   return [v.Marque, v.Modele].filter(Boolean).join(' ') + (v.Num_immat ? ` (${v.Num_immat})` : '')
 }
 
-// Une colonne par champ affiché du modèle Attelage (backend/prisma/schema.prisma).
+// Une colonne par champ affiché du modèle AttelageReference
+// (backend/prisma/schema.prisma).
 const helper = createColumnHelper<typeof features, Attelage>()
 
 export const columns = helper.columns([

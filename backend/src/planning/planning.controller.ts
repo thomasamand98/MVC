@@ -3,7 +3,8 @@
 // (PlanningService).
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { PlanningService } from './planning.service.js';
-import type { CreatePlanningExecutionDto, MovePlanningExecutionDto } from './planning.dto.js';
+import { CreatePlanningExecutionDto, MovePlanningExecutionDto } from './planning.dto.js';
+import { ZodBodyPipe } from '../common/validation.js';
 
 @Controller('planning')
 export class PlanningController {
@@ -19,12 +20,12 @@ export class PlanningController {
   }
 
   @Post('executions')
-  async createExecution(@Body() dto: CreatePlanningExecutionDto) {
+  async createExecution(@Body(new ZodBodyPipe(CreatePlanningExecutionDto)) dto: CreatePlanningExecutionDto) {
     return this.planningService.createExecution(dto);
   }
 
   @Patch('executions/:id')
-  async moveExecution(@Param('id') id: string, @Body() dto: MovePlanningExecutionDto) {
+  async moveExecution(@Param('id') id: string, @Body(new ZodBodyPipe(MovePlanningExecutionDto)) dto: MovePlanningExecutionDto) {
     return this.planningService.moveExecution(id, dto);
   }
 

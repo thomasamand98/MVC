@@ -13,6 +13,8 @@ import { TAB_MODE_ID } from './view-modes/TabMode.js'
 import { VIEW_MODE_SELECTION_ENABLED, useViewModePreference } from './view-modes/useViewModePreference.js'
 import { ViewModeSelector } from './view-modes/ViewModeSelector.js'
 import { viewModes } from './view-modes/index.js'
+import { GuardBoundary } from './unsaved-changes/UnsavedChangesProvider.js'
+import { useConfirmLeave, useGuardScope } from './unsaved-changes/UnsavedChangesContext.js'
 import './CrudPage.css'
 
 function ChevronLeftIcon() {
@@ -95,6 +97,9 @@ type Props<T extends RowData, TDto, TDetail> = {
   // pour un résultat de projection) — `title` reste utilisé pour les
   // identifiants d'onglet des fiches.
   heading?: string
+  // Filtres affichés à droite du champ Rechercher (ex. ArchiveFilter sur
+  // ChauffeursPage.tsx) — la page gère leur état et les passe à son hook.
+  toolbarExtra?: ReactNode
 }
 
 // Assemble le hook (données), le tableau et la modale de création/
@@ -124,6 +129,7 @@ export function CrudPage<T extends RowData, TDto, TDetail = T>({
   newRecordScope,
   entity,
   heading,
+  toolbarExtra,
 }: Props<T, TDto, TDetail>) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set())
   // Ligne ouverte en modification (double clic) — distincte de la sélection,
@@ -135,6 +141,11 @@ export function CrudPage<T extends RowData, TDto, TDetail = T>({
   const [viewModeId, setViewModeId] = useViewModePreference()
   const { openOrActivateTab, closeTab } = useTabsContext()
   const projection = useProjection()
+  // Zone de la fiche ouverte (voir components/unsaved-changes/) : la fermer,
+  // ou en ouvrir une autre à sa place, demande d'abord quoi faire d'une
+  // saisie modifiée.
+  const formScope = useGuardScope()
+  const confirmLeave = useConfirmLeave()
   // Passe à true au premier chargement terminé : les rechargements suivants
   // (page, recherche, après enregistrement) gardent la page affichée — sinon
   // le champ Rechercher serait démonté à chaque frappe et perdrait le focus.
@@ -147,6 +158,12 @@ export function CrudPage<T extends RowData, TDto, TDetail = T>({
   }
 
   const isTabMode = viewModeId === TAB_MODE_ID
+
+  // Quitte la fiche ouverte (croix, fond, Annuler...) après confirmation si
+  // elle a été modifiée.
+  async function requestCloseForm() {
+    if (await confirmLeave(formScope)) setModalMode(null)
+  }
 
   // Ne garde que les ids encore présents dans `data` — une ligne sélectionnée
   // peut disparaître (changement de page, rechargement serveur) sans que
@@ -190,7 +207,8 @@ export function CrudPage<T extends RowData, TDto, TDetail = T>({
           setData((prev) => [...prev, created])
         }
       }
-      closeTab(tabId)
+      // Juste enregistré : rien à confirmer.
+      closeTab(tabId, { force: true })
     } catch (err) {
       alert(`Échec de l'enregistrement : ${err instanceof Error ? err.message : 'erreur inconnue'}`)
     }
@@ -229,6 +247,9 @@ export function CrudPage<T extends RowData, TDto, TDetail = T>({
     }
     if (detailLoading) return
     const id = getRowId(row)
+    // Déjà ouverte : on garde la saisie en cours.
+    if (modalMode === 'edit' && editId === id) return
+    if (modalMode && !(await confirmLeave(formScope))) return
     setSelectedIds(new Set([id]))
     setEditId(id)
     if (!getDetail) {
@@ -308,7 +329,13 @@ export function CrudPage<T extends RowData, TDto, TDetail = T>({
 
   const formTitle = modalMode === 'edit' ? editModalTitle : createModalTitle
   const formContent = modalMode
-    ? renderForm({ initial: modalMode === 'edit' ? editRecord : null, onSubmit: handleSubmit, onCancel: () => setModalMode(null) })
+    ? (
+        // key : une autre fiche ouverte à la place repart de ses propres
+        // valeurs (sinon le formulaire garderait l'état du précédent).
+        <GuardBoundary key={`${modalMode}:${editId ?? 'new'}`} scope={formScope}>
+          {renderForm({ initial: modalMode === 'edit' ? editRecord : null, onSubmit: handleSubmit, onCancel: () => void requestCloseForm() })}
+        </GuardBoundary>
+      )
     : null
 
   // Mode "Ligne + bloc" (voir RowExpandMode.tsx) : la modification déplie la
@@ -330,13 +357,16 @@ export function CrudPage<T extends RowData, TDto, TDetail = T>({
         onRowDoubleClick={handleRowDoubleClick}
         exportFileName={title}
         toolbarStart={
-          pagination?.onSearchChange && <TableSearch value={pagination.search ?? ''} onChange={pagination.onSearchChange} />
+          <>
+            {pagination?.onSearchChange && <TableSearch value={pagination.search ?? ''} onChange={pagination.onSearchChange} />}
+            {toolbarExtra}
+          </>
         }
         expandedRowId={isRowExpandMode && modalMode === 'edit' ? editId : null}
         renderExpandedRow={
           isRowExpandMode && modalMode === 'edit'
             ? () => (
-                <RowFicheContent title={formTitle} onClose={() => setModalMode(null)}>
+                <RowFicheContent title={formTitle} onClose={() => void requestCloseForm()}>
                   {formContent}
                 </RowFicheContent>
               )
@@ -398,13 +428,23 @@ export function CrudPage<T extends RowData, TDto, TDetail = T>({
       <div className="page-header">
         <h2>{heading ?? title} ({totalCount})</h2>
         <div className="page-header-actions">
-          {VIEW_MODE_SELECTION_ENABLED && <ViewModeSelector value={viewModeId} onChange={setViewModeId} />}
+          {VIEW_MODE_SELECTION_ENABLED && <ViewModeSelector
+              value={viewModeId}
+              onChange={async (id) => {
+                // Changer de mode remonte la fiche ouverte ailleurs : sa saisie serait perdue.
+                if (modalMode && !(await confirmLeave(formScope))) return
+                setModalMode(null)
+                setViewModeId(id)
+              }}
+            />}
           <PageActions
-            onCreate={() => {
+            onCreate={async () => {
               if (isTabMode) {
                 openRecordTab('create', null, null, createModalTitle)
                 return
               }
+              if (modalMode === 'create') return
+              if (modalMode && !(await confirmLeave(formScope))) return
               setSelectedIds(new Set())
               setEditId(null)
               setModalMode('create')
@@ -434,7 +474,7 @@ export function CrudPage<T extends RowData, TDto, TDetail = T>({
         open={Boolean(modalMode)}
         mode={modalMode}
         title={formTitle}
-        onClose={() => setModalMode(null)}
+        onClose={() => void requestCloseForm()}
         table={tableArea}
         form={modeFormSlot}
       />

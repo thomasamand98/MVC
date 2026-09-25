@@ -7,7 +7,7 @@
   flex: 1;
   max-width: 320px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius);
   padding: 0 0.6rem;
   background: var(--bg);
   color: var(--text);
@@ -15,7 +15,7 @@
 
 .table-search:focus-within {
   border-color: var(--accent-border);
-  box-shadow: 0 0 0 3px var(--accent-bg);
+  box-shadow: var(--focus-ring);
 }
 
 .table-search svg {

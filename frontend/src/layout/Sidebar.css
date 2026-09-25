@@ -24,7 +24,7 @@
   font-weight: 600;
   color: var(--text-h);
   padding: 0.55rem 0.5rem;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 
 .sidebar-group-title:hover {
@@ -57,7 +57,7 @@
   font-weight: 600;
   color: var(--text-h);
   padding: 0.55rem 0.5rem;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 
 .sidebar-leaf + .sidebar-group,
@@ -78,7 +78,7 @@
   display: inline-block;
   font-size: 0.7rem;
   color: var(--text);
-  transition: transform 0.15s ease;
+  transition: transform var(--transition);
 }
 
 .sidebar-chevron.open {
@@ -101,7 +101,7 @@
   font-size: 0.9rem;
   color: var(--text);
   padding: 0.45rem 0.5rem 0.45rem 1.75rem;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 
 .sidebar-item:hover {
@@ -147,7 +147,7 @@
     display: block;
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.4);
+    background: var(--overlay);
     z-index: 55;
   }
 }
